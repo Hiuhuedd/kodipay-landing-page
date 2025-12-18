@@ -47,7 +47,7 @@ export default function Pricing() {
                             <div className="mx-auto max-w-xs px-8">
                                 <p className="text-base font-semibold text-gray-600">Monthly access</p>
                                 <p className="mt-6 flex items-baseline justify-center gap-x-2">
-                                    <span className="text-5xl font-bold tracking-tight text-gray-900">KES 2,350</span>
+                                    <span className="text-5xl font-bold tracking-tight text-gray-900">KES 2,750</span>
                                     <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600">/mo</span>
                                 </p>
                                 <p className="mt-2 text-xs text-gray-400 line-through">KES 3,500</p>
