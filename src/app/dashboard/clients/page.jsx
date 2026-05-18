@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
     fetchAPI, 
@@ -36,6 +37,7 @@ import {
 } from 'lucide-react';
 
 export default function ClientManagementPage() {
+    const router = useRouter();
     const { isAdmin } = useAuth();
     const [clients, setClients] = useState([]);
     const [properties, setProperties] = useState([]);
@@ -379,7 +381,11 @@ export default function ClientManagementPage() {
                             <tbody className="divide-y divide-[#F1F5F9]">
                                 {filteredClients.map((client) => {
                                     return (
-                                        <tr key={client.id} className="hover:bg-[#F8FAFC]/50 transition-colors group">
+                                        <tr 
+                                            key={client.id} 
+                                            onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                                            className="hover:bg-[#F8FAFC]/50 transition-colors group cursor-pointer"
+                                        >
                                             {/* Profile Cell */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -431,15 +437,12 @@ export default function ClientManagementPage() {
                                             {/* Actions */}
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-1.5">
-                                                    <Link
-                                                        href={`/dashboard/clients/${client.id}`}
-                                                        className="h-7 px-2.5 rounded bg-[#0f172a] hover:bg-[#1e293b] text-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center transition-all shadow-sm"
-                                                    >
-                                                        View Profile
-                                                    </Link>
                                                     <button
                                                         disabled={client.outstandingPayout <= 0}
-                                                        onClick={() => handlePayoutClick(client)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePayoutClick(client);
+                                                        }}
                                                         className={`h-7 px-2.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all ${
                                                             client.outstandingPayout > 0
                                                             ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
@@ -449,14 +452,10 @@ export default function ClientManagementPage() {
                                                         <ArrowUpRight size={11} /> Pay
                                                     </button>
                                                     <button
-                                                        onClick={() => handleEditClientClick(client)}
-                                                        className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 text-[#64748B] hover:text-[#0f172a] flex items-center justify-center transition-colors border border-[#E2E8F0]"
-                                                        title="Edit profile"
-                                                    >
-                                                        <Settings size={13} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteClient(client.id)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteClient(client.id);
+                                                        }}
                                                         className="h-7 w-7 rounded bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-colors border border-red-100"
                                                         title="Delete profile"
                                                     >
