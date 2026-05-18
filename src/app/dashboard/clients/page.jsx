@@ -632,7 +632,7 @@ export default function ClientManagementPage() {
             {/* ── MODAL: Record Payout (Pay Client) ── */}
             {showPayoutModal && (
                 <div className="fixed inset-0 bg-[#0f172a]/45 backdrop-blur-[4px] z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col animate-zoom-in">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col animate-zoom-in">
                         {/* Header */}
                         <div className="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
                             <div>
