@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import Link from 'next/link';
 import { 
     fetchAPI, 
     getProperties, 
@@ -41,7 +42,6 @@ export default function ClientManagementPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [expandedClientId, setExpandedClientId] = useState(null);
 
     // Modals state
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -256,13 +256,7 @@ export default function ClientManagementPage() {
         }
     };
 
-    const toggleExpandClient = (clientId) => {
-        if (expandedClientId === clientId) {
-            setExpandedClientId(null);
-        } else {
-            setExpandedClientId(clientId);
-        }
-    };
+
 
     // Filters & Metrics
     const filteredClients = clients.filter(c => 
@@ -272,6 +266,7 @@ export default function ClientManagementPage() {
     );
 
     const totalCollected = clients.reduce((acc, c) => acc + (c.totalCollected || 0), 0);
+    const totalExpenses = clients.reduce((acc, c) => acc + (c.totalExpenses || 0), 0);
     const totalPaid = clients.reduce((acc, c) => acc + (c.totalPaid || 0), 0);
     const totalOutstanding = clients.reduce((acc, c) => acc + (c.outstandingPayout || 0), 0);
 
@@ -300,7 +295,7 @@ export default function ClientManagementPage() {
             </div>
 
             {/* ── Key Metrics Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <TrendingUp size={20} />
@@ -308,6 +303,16 @@ export default function ClientManagementPage() {
                     <div>
                         <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Total Rent Collected</span>
                         <h3 className="text-lg font-semibold tracking-tight text-[#0F172A] mt-0.5">{formatCurrency(totalCollected)}</h3>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                        <X size={20} />
+                    </div>
+                    <div>
+                        <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Operating Expenses</span>
+                        <h3 className="text-lg font-semibold tracking-tight text-[#0F172A] mt-0.5">{formatCurrency(totalExpenses)}</h3>
                     </div>
                 </div>
 
@@ -363,9 +368,9 @@ export default function ClientManagementPage() {
                             <thead>
                                 <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider w-1/4">Landlord Profile</th>
-                                    <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-center">Commission</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-center">Properties</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Collected (Gross)</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Expenses Incurred</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Outstanding (Net)</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Total Paid</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Actions</th>
@@ -373,150 +378,93 @@ export default function ClientManagementPage() {
                             </thead>
                             <tbody className="divide-y divide-[#F1F5F9]">
                                 {filteredClients.map((client) => {
-                                    const isExpanded = expandedClientId === client.id;
                                     return (
-                                        <Fragment key={client.id}>
-                                            <tr className="hover:bg-[#F8FAFC]/50 transition-colors group">
-                                                {/* Profile Cell */}
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0 text-xs font-semibold">
-                                                            {client.name.charAt(0)}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <h4 className="text-[13px] font-semibold text-[#0F172A] truncate flex items-center gap-1.5">
-                                                                {client.name}
-                                                                <button 
-                                                                    onClick={() => toggleExpandClient(client.id)}
-                                                                    className="text-[#94A3B8] hover:text-[#0F172A] p-0.5 rounded transition-colors"
-                                                                    title="View payout history"
-                                                                >
-                                                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                                                </button>
-                                                            </h4>
-                                                            <div className="flex flex-col gap-0.5 mt-1 text-[11px] text-[#64748B]">
-                                                                {client.phone && <span className="flex items-center gap-1"><Phone size={10} /> {client.phone}</span>}
-                                                                {client.email && <span className="flex items-center gap-1 truncate"><Mail size={10} /> {client.email}</span>}
-                                                            </div>
+                                        <tr key={client.id} className="hover:bg-[#F8FAFC]/50 transition-colors group">
+                                            {/* Profile Cell */}
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0 text-xs font-semibold">
+                                                        {client.name.charAt(0)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="text-[13px] font-semibold text-[#0F172A] truncate">
+                                                            {client.name}
+                                                        </h4>
+                                                        <div className="flex flex-col gap-0.5 mt-1 text-[11px] text-[#64748B]">
+                                                            {client.phone && <span className="flex items-center gap-1"><Phone size={10} /> {client.phone}</span>}
+                                                            {client.email && <span className="flex items-center gap-1 truncate"><Mail size={10} /> {client.email}</span>}
                                                         </div>
                                                     </div>
-                                                </td>
+                                                </div>
+                                            </td>
 
-                                                {/* Commission rate */}
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-[#F1F5F9] rounded-md text-[11px] font-medium text-[#475569]">
-                                                        {client.commissionRate}%
-                                                    </span>
-                                                </td>
+                                            {/* Assigned properties count */}
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="inline-flex items-center gap-1 text-[12px] text-[#0F172A] font-medium">
+                                                    <Building2 size={12} className="text-[#94A3B8]" />
+                                                    {client.propertiesCount}
+                                                </span>
+                                            </td>
 
-                                                {/* Assigned properties count */}
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center gap-1 text-[12px] text-[#0F172A] font-medium">
-                                                        <Building2 size={12} className="text-[#94A3B8]" />
-                                                        {client.propertiesCount}
-                                                    </span>
-                                                </td>
+                                            {/* Total rent collected */}
+                                            <td className="px-6 py-4 text-right text-[13px] font-medium text-[#64748B]">
+                                                {formatCurrency(client.totalCollected)}
+                                            </td>
 
-                                                {/* Total rent collected */}
-                                                <td className="px-6 py-4 text-right text-[13px] font-medium text-[#64748B]">
-                                                    {formatCurrency(client.totalCollected)}
-                                                </td>
+                                            {/* Total Expenses Incurred */}
+                                            <td className="px-6 py-4 text-right text-[13px] font-medium text-red-600">
+                                                {formatCurrency(client.totalExpenses || 0)}
+                                            </td>
 
-                                                {/* Outstanding Payout */}
-                                                <td className="px-6 py-4 text-right">
-                                                    <span className={`text-[13px] font-semibold ${client.outstandingPayout > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                                                        {formatCurrency(client.outstandingPayout)}
-                                                    </span>
-                                                </td>
+                                            {/* Outstanding Payout */}
+                                            <td className="px-6 py-4 text-right">
+                                                <span className={`text-[13px] font-semibold ${client.outstandingPayout > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                    {formatCurrency(client.outstandingPayout)}
+                                                </span>
+                                            </td>
 
-                                                {/* Total paid payouts */}
-                                                <td className="px-6 py-4 text-right text-[13px] font-semibold text-emerald-600">
-                                                    {formatCurrency(client.totalPaid)}
-                                                </td>
+                                            {/* Total paid payouts */}
+                                            <td className="px-6 py-4 text-right text-[13px] font-semibold text-emerald-600">
+                                                {formatCurrency(client.totalPaid)}
+                                            </td>
 
-                                                {/* Actions */}
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-1.5">
-                                                        <button
-                                                            disabled={client.outstandingPayout <= 0}
-                                                            onClick={() => handlePayoutClick(client)}
-                                                            className={`h-7 px-2.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all ${
-                                                                client.outstandingPayout > 0
-                                                                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
-                                                                : 'bg-[#F1F5F9] text-[#94A3B8] cursor-not-allowed'
-                                                            }`}
-                                                        >
-                                                            <ArrowUpRight size={11} /> Pay Client
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleEditClientClick(client)}
-                                                            className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 text-[#64748B] hover:text-[#0f172a] flex items-center justify-center transition-colors"
-                                                            title="Edit profile"
-                                                        >
-                                                            <Settings size={13} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteClient(client.id)}
-                                                            className="h-7 w-7 rounded bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-colors"
-                                                            title="Delete profile"
-                                                        >
-                                                            <Trash2 size={13} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-
-                                            {/* Expandable Payout History timeline */}
-                                            {isExpanded && (
-                                                <tr className="bg-[#F8FAFC]">
-                                                    <td colSpan="7" className="px-8 py-5 border-t border-[#E2E8F0]">
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center justify-between">
-                                                                <h5 className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Disbursal & Payout Ledger for {client.name}</h5>
-                                                                <div className="flex items-center gap-3 text-[11px] text-[#64748B]">
-                                                                    <span>Gross Commission Earned: <strong>{formatCurrency(client.totalCommission)}</strong></span>
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#E2E8F0]" />
-                                                                    <span>Disbursed Period: <strong>All Time</strong></span>
-                                                                </div>
-                                                            </div>
-
-                                                            {(!client.payouts || client.payouts.length === 0) ? (
-                                                                <div className="py-6 text-center text-xs text-[#94A3B8] bg-white border border-[#E2E8F0] rounded-lg">
-                                                                    No payouts have been logged for this landlord client yet.
-                                                                </div>
-                                                            ) : (
-                                                                <div className="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden shadow-sm">
-                                                                    <table className="w-full text-left text-xs">
-                                                                        <thead>
-                                                                            <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] font-semibold">
-                                                                                <th className="px-4 py-2.5">Date Paid</th>
-                                                                                <th className="px-4 py-2.5">Reference No</th>
-                                                                                <th className="px-4 py-2.5">Disbursal Method</th>
-                                                                                <th className="px-4 py-2.5">Payout Period</th>
-                                                                                <th className="px-4 py-2.5">Notes</th>
-                                                                                <th className="px-4 py-2.5 text-right">Disbursed Amount</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-[#F1F5F9]">
-                                                                            {client.payouts.map(p => (
-                                                                                <tr key={p.id} className="hover:bg-[#F8FAFC]/50 transition-colors">
-                                                                                    <td className="px-4 py-3 text-[#0F172A] font-medium">{formatDate(p.createdAt)}</td>
-                                                                                    <td className="px-4 py-3 font-mono font-bold text-[#475569] uppercase">{p.referenceNumber || '—'}</td>
-                                                                                    <td className="px-4 py-3 uppercase text-[10px] font-semibold text-[#64748B]"><span className="px-1.5 py-0.5 bg-[#F1F5F9] rounded">{p.paymentMethod}</span></td>
-                                                                                    <td className="px-4 py-3">{p.payoutMonth || 'All-Time'}</td>
-                                                                                    <td className="px-4 py-3 text-[#64748B] max-w-xs truncate" title={p.notes}>{p.notes || '—'}</td>
-                                                                                    <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(p.amount)}</td>
-                                                                                </tr>
-                                                                            ))}
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </Fragment>
+                                            {/* Actions */}
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <Link
+                                                        href={`/dashboard/clients/${client.id}`}
+                                                        className="h-7 px-2.5 rounded bg-[#0f172a] hover:bg-[#1e293b] text-white text-[11px] font-bold uppercase tracking-wider flex items-center justify-center transition-all shadow-sm"
+                                                    >
+                                                        View Profile
+                                                    </Link>
+                                                    <button
+                                                        disabled={client.outstandingPayout <= 0}
+                                                        onClick={() => handlePayoutClick(client)}
+                                                        className={`h-7 px-2.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all ${
+                                                            client.outstandingPayout > 0
+                                                            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
+                                                            : 'bg-[#F1F5F9] text-[#94A3B8] cursor-not-allowed'
+                                                        }`}
+                                                    >
+                                                        <ArrowUpRight size={11} /> Pay
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleEditClientClick(client)}
+                                                        className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 text-[#64748B] hover:text-[#0f172a] flex items-center justify-center transition-colors border border-[#E2E8F0]"
+                                                        title="Edit profile"
+                                                    >
+                                                        <Settings size={13} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClient(client.id)}
+                                                        className="h-7 w-7 rounded bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-colors border border-red-100"
+                                                        title="Delete profile"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     );
                                 })}
                             </tbody>

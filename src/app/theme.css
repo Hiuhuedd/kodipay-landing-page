@@ -1,0 +1,22 @@
+@theme {
+  /* ── Executive UI Tokens (v2) ── */
+  
+  /* Backgrounds */
+  --color-kp-bg: #FFFFFF;
+  --color-kp-surface: #F8FAFC;
+  
+  /* Borders */
+  --color-kp-border: #E2E8F0;
+  
+  /* Text */
+  --color-kp-text-primary: #0F172A;
+  --color-kp-text-secondary: #64748B;
+  
+  /* Semantic Colors */
+  --color-kp-blue: #007AFF;
+  --color-kp-green: #16A34A;
+  --color-kp-red: #DC2626;
+
+  /* ── Typography: Fonts ── */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
