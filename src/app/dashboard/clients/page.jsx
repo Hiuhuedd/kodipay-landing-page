@@ -297,26 +297,6 @@ export default function ClientManagementPage() {
                     <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#0F172A]">Landlord Client Management</h2>
                     <p className="text-[10px] text-[#94A3B8] mt-0.5 uppercase tracking-widest">Manage Landlord Profiles & Payouts</p>
                 </div>
-                <button
-                    onClick={() => {
-                        setFormData({
-                            name: '',
-                            email: '',
-                            phone: '',
-                            commissionRate: 10,
-                            payoutMethod: 'mpesa',
-                            payoutDetails: '',
-                            notes: '',
-                            assignedProperties: []
-                        });
-                        setFormError('');
-                        setFormSuccess('');
-                        setShowCreateModal(true);
-                    }}
-                    className="bg-[#007AFF] text-white text-[12px] font-medium h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1.5 shadow-sm"
-                >
-                    <Plus size={14} /> Add Landlord Client
-                </button>
             </div>
 
             {/* ── Key Metrics Cards ── */}
@@ -375,7 +355,7 @@ export default function ClientManagementPage() {
                     <div className="py-16 text-center">
                         <Briefcase size={36} className="text-[#94A3B8] mx-auto mb-3" />
                         <h3 className="text-[14px] font-semibold text-[#0F172A]">No landlord profiles found</h3>
-                        <p className="text-xs text-[#94A3B8] mt-1">Create landlord profiles and link them to properties to manage payouts.</p>
+                        <p className="text-xs text-[#94A3B8] mt-1">Landlord profiles are automatically created and updated when you register or edit properties!</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -545,160 +525,7 @@ export default function ClientManagementPage() {
                 )}
             </div>
 
-            {/* ── MODAL: Create Landlord Client ── */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-[#0f172a]/45 backdrop-blur-[4px] z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-zoom-in">
-                        {/* Header */}
-                        <div className="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
-                            <div>
-                                <h3 className="text-[15px] font-semibold text-[#0F172A]">Create Landlord Client Profile</h3>
-                                <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider mt-0.5">Define landlord contact, commission rate and payout details</p>
-                            </div>
-                            <button onClick={() => setShowCreateModal(false)} className="text-[#94A3B8] hover:text-[#0f172a] transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
 
-                        {/* Body / Scrollable Form */}
-                        <form onSubmit={handleCreateClient} className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg font-medium">{formError}</div>}
-                            {formSuccess && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs rounded-lg font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> {formSuccess}</div>}
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Landlord Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. EDWARD KARIUKI HIUHU"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Email Address</label>
-                                    <input
-                                        type="email"
-                                        placeholder="e.g. edward@hiuhu.com"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Phone Number</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 254743466932"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider flex items-center gap-1">
-                                        <Percent size={11} /> Agency Commission Rate *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        max="100"
-                                        placeholder="e.g. 10"
-                                        value={formData.commissionRate}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, commissionRate: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Preferred Payout Disbursal</label>
-                                    <select
-                                        value={formData.payoutMethod}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, payoutMethod: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase"
-                                    >
-                                        <option value="mpesa">M-Pesa Mobile Money</option>
-                                        <option value="bank">Bank Transfer</option>
-                                        <option value="cash">Cash Outflow</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Details (Account or Wallet Info)</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Paybill Acc 0743466932 or Equity Acc 1210167890123"
-                                    value={formData.payoutDetails}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, payoutDetails: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                />
-                            </div>
-
-                            {/* Assigned Properties Checkbox list */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Link Managed Properties</label>
-                                <div className="border border-[#E2E8F0] rounded-lg p-3 max-h-36 overflow-y-auto bg-[#F8FAFC] space-y-1.5">
-                                    {properties.length === 0 ? (
-                                        <div className="text-center text-xs text-[#94A3B8] py-2">No active properties available in agency database.</div>
-                                    ) : (
-                                        properties.map(p => {
-                                            const isSelected = formData.assignedProperties.includes(p.id);
-                                            return (
-                                                <button
-                                                    type="button"
-                                                    key={p.id}
-                                                    onClick={() => togglePropertySelection(p.id)}
-                                                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition-all ${
-                                                        isSelected 
-                                                        ? 'bg-[#F0F6FF] text-[#007AFF] font-semibold border border-[#BFDBFE]' 
-                                                        : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
-                                                    }`}
-                                                >
-                                                    <span className="flex items-center gap-1.5"><Building2 size={11} /> {p.propertyName}</span>
-                                                    <span className="text-[9px] uppercase tracking-widest">{isSelected ? 'Linked' : 'Link'}</span>
-                                                </button>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Internal Notes</label>
-                                <textarea
-                                    placeholder="Add any internal guidelines or records..."
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-2 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-16 resize-none"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E2E8F0]">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    className="h-9 px-4 rounded-md border border-[#E2E8F0] hover:bg-slate-50 transition-colors text-[12px] font-semibold text-[#64748B]"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="h-9 px-4 rounded-md bg-[#007AFF] hover:bg-blue-600 text-white font-semibold text-[12px] transition-colors"
-                                >
-                                    Create Landlord Client
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             {/* ── MODAL: Edit Landlord Client ── */}
             {showEditModal && (
