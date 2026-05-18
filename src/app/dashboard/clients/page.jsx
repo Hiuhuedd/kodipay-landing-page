@@ -365,7 +365,7 @@ export default function ClientManagementPage() {
                         <p className="text-xs text-[#94A3B8] mt-1">Landlord profiles are automatically created and updated when you register or edit properties!</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
@@ -632,7 +632,7 @@ export default function ClientManagementPage() {
             {/* ── MODAL: Record Payout (Pay Client) ── */}
             {showPayoutModal && (
                 <div className="fixed inset-0 bg-[#0f172a]/45 backdrop-blur-[4px] z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-zoom-in">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-zoom-in">
                         {/* Header */}
                         <div className="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
                             <div>
@@ -649,84 +649,93 @@ export default function ClientManagementPage() {
                             {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg font-medium">{formError}</div>}
                             {formSuccess && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs rounded-lg font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> {formSuccess}</div>}
 
-                            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-4 text-center">
-                                <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Available Outstanding Payout</span>
-                                <h4 className="text-xl font-bold text-[#0F172A] mt-1">{formatCurrency(selectedClient?.outstandingPayout)}</h4>
-                                <span className="text-[9px] text-[#94A3B8] block mt-1">Disbursed to: {selectedClient?.name}</span>
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Left Column */}
+                                <div className="space-y-4">
+                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-4 text-center">
+                                        <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Available Outstanding Payout</span>
+                                        <h4 className="text-xl font-bold text-[#0F172A] mt-1">{formatCurrency(selectedClient?.outstandingPayout)}</h4>
+                                        <span className="text-[9px] text-[#94A3B8] block mt-1">Disbursed to: {selectedClient?.name}</span>
+                                    </div>
 
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Amount (KSh) *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    step="0.01"
-                                    min="0.01"
-                                    max={selectedClient?.outstandingPayout}
-                                    placeholder="Enter payout amount"
-                                    value={payoutForm.amount}
-                                    onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-semibold"
-                                />
-                            </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Amount (KSh) *</label>
+                                        <input
+                                            type="number"
+                                            required
+                                            step="0.01"
+                                            min="0.01"
+                                            max={selectedClient?.outstandingPayout}
+                                            placeholder="Enter payout amount"
+                                            value={payoutForm.amount}
+                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
+                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-semibold"
+                                        />
+                                    </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Disbursal Method *</label>
-                                    <select
-                                        value={payoutForm.paymentMethod}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase"
-                                    >
-                                        <option value="mpesa">M-Pesa Paybill</option>
-                                        <option value="bank">Bank Transfer</option>
-                                        <option value="cash">Cash Disbursal</option>
-                                    </select>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Disbursal Method *</label>
+                                            <select
+                                                value={payoutForm.paymentMethod}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase"
+                                            >
+                                                <option value="mpesa">M-Pesa Paybill</option>
+                                                <option value="bank">Bank Transfer</option>
+                                                <option value="cash">Cash Disbursal</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Month *</label>
+                                            <input
+                                                type="month"
+                                                required
+                                                value={payoutForm.payoutMonth}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, payoutMonth: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Month *</label>
-                                    <input
-                                        type="month"
-                                        required
-                                        value={payoutForm.payoutMonth}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, payoutMonth: e.target.value }))}
-                                        className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
-                                    />
+
+                                {/* Right Column */}
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Reference Number (M-Pesa or Bank ID)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. QXX890J23K or TXN-2908"
+                                            value={payoutForm.referenceNumber}
+                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
+                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-mono font-bold uppercase"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Transaction Notes / Email Description</label>
+                                        <textarea
+                                            placeholder="Include payment notes that will be detailed on client receipt..."
+                                            value={payoutForm.notes}
+                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, notes: e.target.value }))}
+                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-2 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-[72px] resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 pt-2">
+                                        <input
+                                            type="checkbox"
+                                            id="chk-email-payout"
+                                            defaultChecked
+                                            disabled
+                                            className="rounded border-[#E2E8F0] text-[#007AFF] focus:ring-[#007AFF]"
+                                        />
+                                        <label htmlFor="chk-email-payout" className="text-[11px] font-medium text-[#64748B] flex items-center gap-1.5 leading-tight">
+                                            <Mail size={12} className="text-[#94A3B8] shrink-0" />
+                                            <span>Email payment receipt to <span className="font-bold text-[#0F172A]">{selectedClient?.email || 'landlord'}</span></span>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Reference Number (M-Pesa or Bank ID)</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. QXX890J23K or TXN-2908"
-                                    value={payoutForm.referenceNumber}
-                                    onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-mono font-bold uppercase"
-                                />
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Transaction Notes / Email Description</label>
-                                <textarea
-                                    placeholder="Include payment notes that will be detailed on client receipt..."
-                                    value={payoutForm.notes}
-                                    onChange={(e) => setPayoutForm(prev => ({ ...prev, notes: e.target.value }))}
-                                    className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-2 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-16 resize-none"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2 py-2">
-                                <input
-                                    type="checkbox"
-                                    id="chk-email-payout"
-                                    defaultChecked
-                                    disabled
-                                    className="rounded border-[#E2E8F0] text-[#007AFF] focus:ring-[#007AFF]"
-                                />
-                                <label htmlFor="chk-email-payout" className="text-[11px] font-medium text-[#64748B] flex items-center gap-1">
-                                    <Mail size={12} className="text-[#94A3B8]" /> Email styled payment receipt invoice to {selectedClient?.email || 'landlord'}
-                                </label>
                             </div>
 
                             <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E2E8F0]">
