@@ -20,7 +20,8 @@ import {
     TrendingDown,
     Briefcase,
     Calendar,
-    Settings
+    Settings,
+    FileText
 } from 'lucide-react';
 import { 
     fetchAPI, 
