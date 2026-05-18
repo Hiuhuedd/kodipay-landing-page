@@ -384,7 +384,7 @@ export default function ClientManagementPage() {
                                         <tr 
                                             key={client.id} 
                                             onClick={() => router.push(`/dashboard/clients/${client.id}`)}
-                                            className="hover:bg-[#F8FAFC]/50 transition-colors group cursor-pointer"
+                                            className="hover:bg-slate-50/80 active:bg-slate-100/90 transition-all duration-200 group cursor-pointer border-l-2 border-l-transparent hover:border-l-[#007AFF] hover:translate-x-[1px]"
                                         >
                                             {/* Profile Cell */}
                                             <td className="px-6 py-4">

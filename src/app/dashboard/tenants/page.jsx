@@ -13,6 +13,7 @@ export default function TenantsPage() {
     const [statuses, setStatuses] = useState({});
     const [month, setMonth] = useState(getCurrentMonth());
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [properties, setProperties] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -53,11 +54,19 @@ export default function TenantsPage() {
     };
 
 
-    const filtered = tenants.filter(t =>
-        !search || t.name?.toLowerCase().includes(search.toLowerCase()) ||
-        t.unitCode?.toLowerCase().includes(search.toLowerCase()) ||
-        t.phone?.includes(search)
-    );
+    const filtered = tenants.filter(t => {
+        const matchesSearch = !search || 
+            t.name?.toLowerCase().includes(search.toLowerCase()) ||
+            t.unitCode?.toLowerCase().includes(search.toLowerCase()) ||
+            t.phone?.includes(search);
+            
+        if (!matchesSearch) return false;
+        if (statusFilter === 'all') return true;
+        
+        const st = statuses[t.id] || {};
+        const tenantStatus = (st.status || 'Unpaid').toLowerCase();
+        return tenantStatus === statusFilter;
+    });
 
     if (loading) return <LoadingPage />;
 
@@ -96,6 +105,35 @@ export default function TenantsPage() {
                             <X size={16} />
                         </button>
                     )}
+                </div>
+
+                {/* Status Filters */}
+                <div className="flex items-center gap-2 border-b border-[#E2E8F0] pb-2 flex-wrap">
+                    {[
+                        { id: 'all', label: 'All Tenants', count: tenants.length },
+                        { id: 'paid', label: 'Paid', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'paid').length },
+                        { id: 'unpaid', label: 'Unpaid', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'unpaid').length },
+                        { id: 'partial', label: 'Partial', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'partial').length }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setStatusFilter(tab.id)}
+                            className={`h-8 px-4 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                                statusFilter === tab.id
+                                ? 'bg-[#0F172A] text-white shadow-sm'
+                                : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]'
+                            }`}
+                        >
+                            <span>{tab.label}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                                statusFilter === tab.id
+                                ? 'bg-white/20 text-white'
+                                : 'bg-white border border-[#E2E8F0] text-[#64748B]'
+                            }`}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    ))}
                 </div>
 
                 {/* Table */}
