@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { 
     fetchAPI, 
     getProperties, 
@@ -375,8 +375,8 @@ export default function ClientManagementPage() {
                                 {filteredClients.map((client) => {
                                     const isExpanded = expandedClientId === client.id;
                                     return (
-                                        <>
-                                            <tr key={client.id} className="hover:bg-[#F8FAFC]/50 transition-colors group">
+                                        <Fragment key={client.id}>
+                                            <tr className="hover:bg-[#F8FAFC]/50 transition-colors group">
                                                 {/* Profile Cell */}
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -516,7 +516,7 @@ export default function ClientManagementPage() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </Fragment>
                                     );
                                 })}
                             </tbody>
