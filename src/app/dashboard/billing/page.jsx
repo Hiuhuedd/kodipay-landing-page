@@ -29,7 +29,7 @@ export default function BillingPage() {
         {
             id: 'starter',
             name: 'Starter Plan',
-            price: 'KSh 2',
+            price: 'KSh 3,200',
             period: 'per month',
             description: 'Essential management tools for small to mid-sized portfolios.',
             cta: 'Activate Starter',
