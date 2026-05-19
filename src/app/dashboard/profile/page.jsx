@@ -100,9 +100,17 @@ export default function ProfilePage() {
     
     // Count total units in assigned or all properties
     const totalUnitsCount = properties.reduce((acc, prop) => {
-        // Handle array of units or length field
         const unitsList = prop.units || [];
-        return acc + (Array.isArray(unitsList) ? unitsList.length : (parseInt(prop.totalUnits) || 0));
+        if (Array.isArray(unitsList) && unitsList.length > 0) {
+            return acc + unitsList.length;
+        }
+        if (prop.propertyUnitsTotal !== undefined) {
+            return acc + (parseInt(prop.propertyUnitsTotal) || 0);
+        }
+        if (prop.propertyUnitIds && Array.isArray(prop.propertyUnitIds)) {
+            return acc + prop.propertyUnitIds.length;
+        }
+        return acc + (parseInt(prop.totalUnits) || 0);
     }, 0);
 
     const getPlanDisplayName = (id) => {
