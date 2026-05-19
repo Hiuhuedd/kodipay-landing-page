@@ -75,8 +75,8 @@ export const deleteTenant = (id) =>
     fetchAPI(`/tenants/${id}`, { method: 'DELETE' });
 export const getPaymentStatus = (id) =>
     fetchAPI(`/tenants/${id}/payment-status`);
-export const applyPenalty = (id) =>
-    fetchAPI(`/tenants/${id}/apply-penalty`, { method: 'POST' });
+export const applyPenalty = (id, sendSMS = true) =>
+    fetchAPI(`/tenants/${id}/apply-penalty`, { method: 'POST', body: JSON.stringify({ sendSMS }) });
 export const removePenalty = (id) =>
     fetchAPI(`/tenants/${id}/remove-penalty`, { method: 'POST' });
 

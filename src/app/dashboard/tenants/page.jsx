@@ -57,9 +57,10 @@ export default function TenantsPage() {
 
     const handleApplyPenalty = async (tenant) => {
         if (!confirm(`Are you sure you want to apply the late rent penalty to ${tenant.name}? This will calculate and append the penalty fee to their active invoice/ledger.`)) return;
+        const sendSMS = confirm(`Would you like to send the late penalty notification SMS to ${tenant.name}?`);
         try {
-            const res = await applyPenalty(tenant.id);
-            alert(`Late penalty of KES ${(res.penaltyAmount || res.data?.penaltyAmount || 0).toLocaleString()} applied successfully.`);
+            const res = await applyPenalty(tenant.id, sendSMS);
+            alert(`Late penalty of KES ${(res.penaltyAmount || res.data?.penaltyAmount || 0).toLocaleString()} applied successfully.${sendSMS ? ' Notification SMS queued for delivery.' : ''}`);
             load();
         } catch (e) {
             console.error(e);
