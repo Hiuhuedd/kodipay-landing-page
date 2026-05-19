@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Building2, User, CreditCard, Loader2 } from 'lucide-react';
+import { Search, Building2, User, CreditCard, Loader2, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { getProperties, getTenants, getMonthlyReport, getCurrentMonth, formatCurrency } from '@/lib/api';
 
 export default function TopBar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     // Live search states
     const [query, setQuery] = useState('');
@@ -17,6 +17,10 @@ export default function TopBar() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({ properties: [], tenants: [], transactions: [] });
     const searchRef = useRef(null);
+    
+    // User profile dropdown states
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     // Fetch master list for offline-first instant local search
     const loadSearchData = async () => {
@@ -55,11 +59,14 @@ export default function TopBar() {
         }
     };
 
-    // Close search on click outside
+    // Close search and dropdown on click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setIsOpen(false);
+            }
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -240,19 +247,66 @@ export default function TopBar() {
                     )}
                 </div>
 
-                {/* User Avatar */}
-                <button
-                    onClick={() => router.push('/dashboard/profile')}
-                    className="w-8 h-8 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#007AFF] hover:shadow-sm transition-all outline-none"
-                >
-                    {user?.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                        <span className="text-xs font-semibold text-[#0F172A]">
-                             {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                        </span>
+                {/* User Avatar & Premium Dropdown Menu */}
+                <div ref={dropdownRef} className="relative">
+                    <button
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="w-8 h-8 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center overflow-hidden cursor-pointer hover:border-[#007AFF] hover:shadow-sm transition-all outline-none"
+                    >
+                        {user?.avatarUrl ? (
+                            <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-xs font-semibold text-[#0F172A]">
+                                 {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                            </span>
+                        )}
+                    </button>
+
+                    {isDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-56 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden py-1 z-50 animate-zoom-in">
+                            <div className="px-4 py-3 border-b border-[#F1F5F9] bg-[#F8FAFC]/50">
+                                <p className="text-xs font-semibold text-[#0F172A] truncate">{user?.name || 'Administrator'}</p>
+                                <p className="text-[10px] text-[#64748B] truncate mt-0.5">{user?.email}</p>
+                            </div>
+                            
+                            <button
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    router.push('/dashboard/profile');
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-[#F8FAFC] text-xs font-medium text-[#475569] hover:text-[#0F172A] transition-colors flex items-center gap-3"
+                            >
+                                <User size={14} className="text-[#94A3B8]" />
+                                View Profile
+                            </button>
+                            
+                            <button
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    router.push('/dashboard/settings');
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-[#F8FAFC] text-xs font-medium text-[#475569] hover:text-[#0F172A] transition-colors flex items-center gap-3"
+                            >
+                                <Settings size={14} className="text-[#94A3B8]" />
+                                Account Settings
+                            </button>
+                            
+                            <div className="border-t border-[#F1F5F9] my-1" />
+                            
+                            <button
+                                onClick={async () => {
+                                    setIsDropdownOpen(false);
+                                    await logout();
+                                    router.push('/signin');
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-red-50 text-xs font-semibold text-[#DC2626] transition-colors flex items-center gap-3"
+                            >
+                                <LogOut size={14} />
+                                Log Out
+                            </button>
+                        </div>
                     )}
-                </button>
+                </div>
             </div>
         </header>
     );

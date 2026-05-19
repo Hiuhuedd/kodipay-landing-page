@@ -128,11 +128,15 @@ export default function Sidebar() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-[#E2E8F0] p-3 bg-[#F8FAFC]/50 overflow-hidden">
+            <div className="border-t border-[#E2E8F0] p-3 bg-[#F8FAFC]/50 overflow-hidden shrink-0">
                 <div className="flex items-center gap-3 min-w-max px-1">
-                    <div className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-sm font-semibold text-[#0F172A] shrink-0 shadow-sm">
+                    <button
+                        onClick={() => router.push('/dashboard/profile')}
+                        className="w-10 h-10 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-sm font-semibold text-[#0F172A] shrink-0 shadow-sm hover:border-[#007AFF] transition-colors outline-none"
+                        title="View Profile"
+                    >
                         {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </div>
+                    </button>
                     <div className={`flex-1 min-w-0 transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
                         <p className="text-[13px] font-semibold text-[#0F172A] truncate">
                             {user?.name || user?.email?.split('@')[0]}
@@ -151,6 +155,17 @@ export default function Sidebar() {
                         </button>
                     )}
                 </div>
+                {!isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-[#E2E8F0]/80 flex justify-center">
+                        <button
+                            onClick={handleLogout}
+                            className="p-2 text-[#94A3B8] hover:text-[#DC2626] transition-colors shrink-0 rounded-md hover:bg-red-50"
+                            title="Logout"
+                        >
+                            <LogOut size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
         </aside>
     );
