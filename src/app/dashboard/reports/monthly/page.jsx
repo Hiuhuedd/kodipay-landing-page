@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getProperties, getPropertyReport, getCurrentMonth, formatCurrency, downloadPropertyReportPdf } from '@/lib/api';
-import { PageHeader, LoadingPage, Badge, EmptyState, MonthPicker, ProgressBar } from '@/components/ui';
-import { FileDown, TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, BarChart3 } from 'lucide-react';
+import { getProperties, getPropertyReport, getCurrentMonth, formatCurrency, downloadPropertyReportPdf, formatDate } from '@/lib/api';
+import { LoadingPage, EmptyState } from '@/components/ui';
+import { FileDown, Calendar, Shield, CreditCard, ChevronRight, Check, DollarSign, TrendingUp, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -12,10 +12,14 @@ export default function MonthlyReportPage() {
     const [properties, setProperties] = useState([]);
     const [selectedProp, setSelectedProp] = useState('');
     const [report, setReport] = useState(null);
+    
+    const [reportColor, setReportColor] = useState('#007aff');
     const [loading, setLoading] = useState(false);
     const [propsLoading, setPropsLoading] = useState(true);
+
     const pathname = usePathname();
 
+    // 1. Fetch properties on load
     useEffect(() => {
         getProperties()
             .then(d => {
@@ -27,6 +31,7 @@ export default function MonthlyReportPage() {
             .finally(() => setPropsLoading(false));
     }, []);
 
+    // 2. Fetch property report when property or month changes
     useEffect(() => {
         if (!selectedProp) return;
         setLoading(true);
@@ -38,21 +43,9 @@ export default function MonthlyReportPage() {
 
     if (propsLoading) return <LoadingPage />;
 
-    const fin = report?.financials || {};
-    const tenants = report?.tenants || [];
-    const pdfUrl = selectedProp ? downloadPropertyReportPdf(selectedProp, month) : null;
-    const collectionPct = fin.income?.expected > 0
-        ? Math.round((fin.income.total / fin.income.expected) * 100)
-        : 0;
-
-    const kpis = [
-        { label: 'Collected', value: formatCurrency(fin.income?.total), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-        { label: 'Expected', value: formatCurrency(fin.income?.expected), icon: BarChart3, color: 'text-[#007AFF]', bg: 'bg-sky-50', border: 'border-sky-100' },
-        { label: 'Outstanding', value: formatCurrency(fin.income?.unpaid), icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-        { label: 'Total Expenses', value: formatCurrency(fin.expenses?.total), icon: TrendingDown, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-        { label: 'Net Income', value: formatCurrency(fin.netIncome), icon: DollarSign, color: 'text-slate-900', bg: 'bg-slate-900', border: 'border-slate-900', inverted: true },
-        { label: `Commission (${fin.commission?.rate || 0}%)`, value: formatCurrency(fin.commission?.total), icon: Users, color: 'text-[#007AFF]', bg: 'bg-sky-50', border: 'border-sky-100' },
-    ];
+    const pdfUrl = selectedProp 
+        ? `${downloadPropertyReportPdf(selectedProp, month)}?reportColor=${encodeURIComponent(reportColor)}`
+        : null;
 
     const tabs = [
         { href: '/dashboard/reports/portfolio', label: 'Portfolio Report' },
@@ -60,34 +53,18 @@ export default function MonthlyReportPage() {
         { href: '/dashboard/reports/tenant', label: 'Tenant Statement' }
     ];
 
+    const fin = report?.financials || {};
+    const tenants = report?.tenants || [];
+    const meta = report?.meta || {};
+    const propDetails = report?.property || {};
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* ── Page Header & Controls ── */}
+            {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[#0F172A]">Monthly Property Report</h2>
-                    <p className="text-xs text-[#64748B] mt-1 uppercase tracking-widest">Income, expenses, and tenant payment status</p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                    <select
-                        className="h-9 px-3 bg-white border border-[#E2E8F0] rounded-md text-sm font-medium text-[#0F172A] outline-none focus:border-[#007AFF] transition-all min-w-[200px]"
-                        value={selectedProp}
-                        onChange={e => setSelectedProp(e.target.value)}
-                    >
-                        {properties.map(p => <option key={p.id} value={p.id}>{p.propertyName}</option>)}
-                    </select>
-                    <MonthPicker value={month} onChange={setMonth} />
-                    {pdfUrl && (
-                        <a
-                            href={pdfUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-2 h-9 px-4 bg-[#007AFF] text-white rounded-md text-xs font-medium hover:bg-blue-600 transition-colors"
-                        >
-                            <FileDown size={14} /> PDF Report
-                        </a>
-                    )}
+                    <p className="text-xs text-[#64748B] mt-1 uppercase tracking-widest">Generate print-ready financial statements for any managed asset</p>
                 </div>
             </div>
 
@@ -111,124 +88,269 @@ export default function MonthlyReportPage() {
                 })}
             </div>
 
-            <div>
-                {loading ? <LoadingPage /> : !report ? (
-                    <div className="bg-white rounded-lg border border-[#E2E8F0] p-12">
-                        <EmptyState icon="📈" title="No report data" desc="Select a property and month to generate a report." />
-                    </div>
-                ) : (
-                    <div className="space-y-8">
-                        {/* KPI Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            {kpis.map(k => {
-                                const Icon = k.icon;
-                                const isNet = k.label === 'Net Income';
-                                return (
-                                    <div 
-                                        key={k.label} 
-                                        className={`rounded-lg border p-5 ${isNet ? 'bg-[#0F172A] border-[#0F172A]' : 'bg-white border-[#E2E8F0]'}`}
-                                    >
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className={`w-8 h-8 rounded flex items-center justify-center ${isNet ? 'bg-white/10 text-white' : 'bg-[#F8FAFC] text-[#64748B]'}`}>
-                                                <Icon size={15} />
-                                            </div>
-                                            <span className={`text-[10px] font-medium uppercase tracking-widest ${isNet ? 'text-white/60' : 'text-[#64748B]'}`}>
-                                                {k.label.split(' (')[0]}
-                                            </span>
-                                        </div>
-                                        <p className={`text-lg font-semibold tracking-tight ${isNet ? 'text-white' : 'text-[#0F172A]'}`}>
-                                            {k.value}
-                                        </p>
-                                    </div>
-                                );
-                            })}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* ── Configuration Sidebar (Left, 4 columns) ── */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 space-y-4 shadow-sm">
+                        <div className="flex items-center gap-2 border-b border-[#F1F5F9] pb-3">
+                            <div className="w-6 h-6 rounded bg-[#F8FAFC] flex items-center justify-center text-[#64748B]">
+                                <Calendar size={14} />
+                            </div>
+                            <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Configure Statement</h3>
                         </div>
 
-                        {/* Collection Progress */}
-                        {fin.income?.expected > 0 && (
-                            <div className="bg-white rounded-lg border border-[#E2E8F0] p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div>
-                                        <h3 className="text-[15px] font-medium text-[#0F172A]">Collection Progress</h3>
-                                        <p className="text-xs text-[#64748B] mt-0.5">{month}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`text-2xl font-semibold ${collectionPct >= 80 ? 'text-[#16A34A]' : collectionPct >= 50 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}>
-                                            {collectionPct}%
-                                        </span>
-                                        <p className="text-[10px] font-medium text-[#64748B] uppercase tracking-widest">Target Met</p>
-                                    </div>
+                        {/* Property Selection */}
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Select Property</label>
+                            <select
+                                className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-sm font-medium text-[#0F172A] outline-none focus:border-[#007AFF] transition-all"
+                                value={selectedProp}
+                                onChange={e => setSelectedProp(e.target.value)}
+                            >
+                                <option value="" disabled>Choose a property...</option>
+                                {properties.map(p => (
+                                    <option key={p.id} value={p.id}>{p.propertyName || p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Month Picker */}
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Select Month</label>
+                            <input
+                                type="month"
+                                className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-sm font-medium text-[#0F172A] outline-none focus:border-[#007AFF] transition-all"
+                                value={month}
+                                onChange={e => setMonth(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Branding options card */}
+                    {selectedProp && report && (
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 space-y-4 shadow-sm animate-in slide-in-from-bottom duration-300">
+                            <div className="flex items-center gap-2 border-b border-[#F1F5F9] pb-3">
+                                <div className="w-6 h-6 rounded bg-[#F8FAFC] flex items-center justify-center text-[#64748B]">
+                                    <Shield size={14} />
                                 </div>
-                                <div className="w-full h-2 bg-[#F8FAFC] rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-700 ${collectionPct >= 80 ? 'bg-[#16A34A]' : collectionPct >= 50 ? 'bg-[#D97706]' : 'bg-[#DC2626]'}`}
-                                        style={{ width: `${collectionPct}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between mt-3 text-xs text-[#64748B]">
-                                    <span className="font-medium text-[#0F172A]">{formatCurrency(fin.income?.total)} <span className="font-normal text-[#64748B]">collected</span></span>
-                                    <span className="font-medium text-[#DC2626]">{formatCurrency(fin.income?.unpaid)} <span className="font-normal text-[#64748B]">outstanding</span></span>
+                                <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Custom Branding</h3>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Statement Primary Color</label>
+                                <div className="grid grid-cols-4 gap-2.5">
+                                    {[
+                                        { label: 'Blue', color: '#007aff' },
+                                        { label: 'Navy', color: '#1a237e' },
+                                        { label: 'Teal', color: '#006064' },
+                                        { label: 'Maroon', color: '#880e4f' },
+                                        { label: 'Forest', color: '#1b5e20' },
+                                        { label: 'Orange', color: '#ea580c' },
+                                        { label: 'Black', color: '#000000' }
+                                    ].map(c => (
+                                        <button
+                                            key={c.color}
+                                            type="button"
+                                            title={c.label}
+                                            onClick={() => setReportColor(c.color)}
+                                            style={{ backgroundColor: c.color }}
+                                            className={`h-7 rounded-md transition-all relative flex items-center justify-center ${
+                                                reportColor === c.color 
+                                                    ? 'ring-2 ring-offset-2 ring-slate-800 scale-95' 
+                                                    : 'hover:scale-105'
+                                            }`}
+                                        >
+                                            {reportColor === c.color && <Check size={12} className="text-white drop-shadow" />}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Expenses Breakdown */}
-                            {fin.expenses?.byCategory && Object.keys(fin.expenses.byCategory).length > 0 && (
-                                <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden flex flex-col h-full">
-                                    <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                                        <h3 className="text-xs font-medium text-[#0F172A] uppercase tracking-wider">Expenses Breakdown</h3>
-                                    </div>
-                                    <div className="flex-1 divide-y divide-[#F1F5F9]">
-                                        {Object.entries(fin.expenses.byCategory).map(([cat, amt]) => (
-                                            <div key={cat} className="flex justify-between items-center px-6 py-4">
-                                                <span className="text-[13px] text-[#64748B]">{cat}</span>
-                                                <span className="text-[13px] font-medium text-[#0F172A]">{formatCurrency(amt)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex justify-between items-center px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0]">
-                                        <span className="text-[13px] font-medium text-[#0F172A]">Total Expenses</span>
-                                        <span className="text-[13px] font-semibold text-[#DC2626]">{formatCurrency(fin.expenses?.total)}</span>
-                                    </div>
+                            {pdfUrl && (
+                                <div className="pt-2">
+                                    <a
+                                        href={pdfUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center justify-center gap-2 w-full h-10 bg-[#007AFF] hover:bg-blue-600 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-sm shadow-blue-100"
+                                    >
+                                        <FileDown size={14} /> Download PDF Statement
+                                    </a>
                                 </div>
                             )}
+                        </div>
+                    )}
+                </div>
 
-                            {/* Tenant Status Table */}
-                            <div className={`bg-white rounded-lg border border-[#E2E8F0] overflow-hidden ${fin.expenses?.byCategory && Object.keys(fin.expenses.byCategory).length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-                                <div className="px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
-                                    <h3 className="text-xs font-medium text-[#0F172A] uppercase tracking-wider">Tenant Status</h3>
-                                    <span className="text-xs text-[#64748B]">{tenants.length} tenants total</span>
+                {/* ── Statement Sheet Live Preview (Right, 8 columns) ── */}
+                <div className="lg:col-span-8">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white border border-[#E2E8F0] rounded-lg">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-b-transparent border-[#007AFF]" />
+                            <span className="text-xs text-[#64748B] font-medium mt-3 uppercase tracking-widest animate-pulse">Compiling financial statement...</span>
+                        </div>
+                    ) : !report ? (
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg">
+                            <EmptyState
+                                icon="📋"
+                                title="No statement loaded"
+                                desc="Select a property and choose a reporting month from the left sidebar to preview the financial statement."
+                            />
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden shadow-sm max-w-[680px] mx-auto animate-in fade-in duration-500">
+                            {/* Live Statement Header */}
+                            <div className="p-8 text-white transition-all" style={{ backgroundColor: reportColor }}>
+                                <div className="text-center pb-5 mb-5 border-b border-white/20">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">{meta.agency?.name || 'KodiPay Agency'}</h4>
+                                    <h3 className="text-sm font-bold uppercase tracking-widest mt-1">Monthly Financial Statement</h3>
                                 </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                                                {['Tenant', 'Unit', 'Expected', 'Paid', 'Outstanding', 'Status'].map(h => (
-                                                    <th key={h} className="px-6 py-3 text-xs font-medium text-[#64748B] uppercase tracking-wide border-b border-[#E2E8F0]">{h}</th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[#F1F5F9]">
-                                            {tenants.map((t, i) => (
-                                                <tr key={i} className="hover:bg-[#F8FAFC] transition-colors">
-                                                    <td className="px-6 py-4 text-[13px] font-medium text-[#0F172A]">{t.tenantName || t.name}</td>
-                                                    <td className="px-6 py-4 text-[13px] text-[#64748B]">{t.unitCode || t.unitName || '—'}</td>
-                                                    <td className="px-6 py-4 text-[13px] text-[#0F172A]">{formatCurrency(t.expectedAmount)}</td>
-                                                    <td className="px-6 py-4 text-[13px] font-medium text-[#16A34A]">{formatCurrency(t.amountPaid)}</td>
-                                                    <td className={`px-6 py-4 text-[13px] font-medium ${t.unpaidAmount > 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
-                                                        {formatCurrency(t.unpaidAmount)}
-                                                    </td>
-                                                    <td className="px-6 py-4"><Badge status={t.status} /></td>
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                                    <div>
+                                        <h2 className="text-xl font-bold tracking-tight">{propDetails.name}</h2>
+                                        <p className="text-xs text-white/90 mt-1 font-medium">
+                                            Owner: {meta.owner?.name || 'Private Client'} • {propDetails.summary || '0 Units Managed'}
+                                        </p>
+                                    </div>
+                                    <div className="text-left md:text-right">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/70 block">Reporting Period</span>
+                                        <span className="text-xs font-bold uppercase">
+                                            {new Date(month + '-01').toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Main Content Area */}
+                            <div className="p-8 space-y-6">
+                                {/* Tenant Payment Schedule */}
+                                <div className="space-y-3">
+                                    <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider border-b border-[#F1F5F9] pb-2">Tenant Payment Schedule</h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs">
+                                            <thead>
+                                                <tr className="border-b border-[#E2E8F0] text-[#64748B] font-bold">
+                                                    <th className="py-2 uppercase tracking-wider">Unit</th>
+                                                    <th className="py-2 uppercase tracking-wider">Tenant</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Rent</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Water</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Garb.</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Elec.</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Paid</th>
+                                                    <th className="py-2 text-right uppercase tracking-wider">Balance</th>
                                                 </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#F1F5F9]">
+                                                {tenants.length > 0 ? (
+                                                    tenants.map((t, idx) => {
+                                                        const water = t.utilityFees?.waterBill || 0;
+                                                        const garbage = t.utilityFees?.garbageFee || 0;
+                                                        const electricity = t.utilityFees?.electricityBill || 0;
+                                                        const rent = (t.expectedAmount || 0) - water - garbage - electricity;
+                                                        return (
+                                                            <tr key={idx} className="hover:bg-[#F8FAFC] transition-colors">
+                                                                <td className="py-3 text-[#334155] font-semibold">{t.unitName}</td>
+                                                                <td className="py-3 text-[#334155]">{t.tenantName}</td>
+                                                                <td className="py-3 text-right tabular-nums">{formatCurrency(rent)}</td>
+                                                                <td className="py-3 text-right tabular-nums">{formatCurrency(water)}</td>
+                                                                <td className="py-3 text-right tabular-nums">{formatCurrency(garbage)}</td>
+                                                                <td className="py-3 text-right tabular-nums">{formatCurrency(electricity)}</td>
+                                                                <td className="py-3 text-right font-medium text-emerald-600 tabular-nums">{formatCurrency(t.amountPaid)}</td>
+                                                                <td className={`py-3 text-right font-bold tabular-nums ${
+                                                                    t.unpaidAmount > 0 ? 'text-rose-600' : 'text-emerald-600'
+                                                                }`}>
+                                                                    {formatCurrency(t.unpaidAmount)}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={8} className="py-6 text-center text-[#64748B] italic">No active tenant schedules logged for this period.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-dashed border-[#E2E8F0]" />
+
+                                {/* Side-by-Side Financial Overview */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
+                                    {/* Left: Income Summary */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-[#64748B] border-b border-[#F1F5F9] pb-2">Income Summary</h4>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between text-[#334155]">
+                                                <span>Total Expected</span>
+                                                <span className="font-semibold tabular-nums">{formatCurrency(fin.income?.expected)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-rose-600">
+                                                <span>Total Unpaid</span>
+                                                <span className="font-semibold tabular-nums">{formatCurrency(fin.income?.unpaid)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[#0F172A] border-t border-[#F1F5F9] pt-2 font-bold text-sm">
+                                                <span>Rent Collections</span>
+                                                <span className="tabular-nums">{formatCurrency(fin.income?.total)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Expenses & Commission */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[10px] font-black uppercase tracking-wider text-[#64748B] border-b border-[#F1F5F9] pb-2">Operating Expenses</h4>
+                                        <div className="space-y-2 text-xs">
+                                            {fin.expenses?.items && fin.expenses.items.map((item, index) => (
+                                                <div key={index} className="flex justify-between text-[#334155]">
+                                                    <span>{item.name}</span>
+                                                    <span className="font-semibold tabular-nums">{formatCurrency(item.amount)}</span>
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
+                                            <div className="flex justify-between text-[#334155]">
+                                                <span>Management Fee ({fin.commission?.rate || 8}%)</span>
+                                                <span className="font-semibold tabular-nums">{formatCurrency(fin.commission?.total)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-[#0F172A] border-t border-[#F1F5F9] pt-2 font-bold text-sm">
+                                                <span>Total Expenses</span>
+                                                <span className="tabular-nums">{formatCurrency(fin.expenses?.total)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-dashed border-[#E2E8F0] pt-4" />
+
+                                {/* Bottom Executive Summary Box */}
+                                <div className="bg-slate-50 border border-slate-100 rounded-lg p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+                                    <div>
+                                        <span className="text-[9px] font-black text-[#64748B] uppercase tracking-wider block">NET MONTHLY INCOME</span>
+                                        <h3 className="text-xl font-black mt-1 tabular-nums transition-all" style={{ color: reportColor }}>
+                                            {formatCurrency(fin.netIncome)}
+                                        </h3>
+                                    </div>
+                                    <div className="text-center md:text-right">
+                                        <span className="text-[9px] font-black text-[#64748B] uppercase tracking-wider block">Collection Rate</span>
+                                        <span className="text-sm font-bold text-[#0F172A] mt-1 block">
+                                            {fin.income?.expected > 0 ? Math.round((fin.income.total / fin.income.expected) * 100) : 0}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Footer info block */}
+                                <div className="text-center space-y-1 text-[11px] text-[#94A3B8] pt-4">
+                                    <p className="font-semibold text-[#64748B]">Generated by {meta.agency?.name}</p>
+                                    {meta.agency?.contact && (
+                                        <p>Enquiries / Support: {meta.agency.contact}</p>
+                                    )}
+                                    <p className="text-[10px] pt-1">Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
