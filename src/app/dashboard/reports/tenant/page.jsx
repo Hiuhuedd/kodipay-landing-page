@@ -20,8 +20,37 @@ export default function TenantStatementPage() {
     const [loadingProps, setLoadingProps] = useState(true);
     const [loadingTenants, setLoadingTenants] = useState(false);
     const [loadingStatement, setLoadingStatement] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     const pathname = usePathname();
+
+    const handleDownload = async () => {
+        if (!pdfUrl) return;
+        setDownloading(true);
+        try {
+            const token = localStorage.getItem('kp_token');
+            const res = await fetch(pdfUrl, {
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Statement_${statement?.tenant?.name?.replace(/\s+/g, '_') || 'Tenant'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Direct download failed, falling back to new tab:", err);
+            window.open(pdfUrl, '_blank');
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     // 1. Fetch properties on load
     useEffect(() => {
@@ -245,14 +274,19 @@ export default function TenantStatementPage() {
 
                             {pdfUrl && (
                                 <div className="pt-2">
-                                    <a
-                                        href={pdfUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center justify-center gap-2 w-full h-10 bg-[#007AFF] hover:bg-blue-600 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-sm shadow-blue-100"
+                                    <button
+                                        type="button"
+                                        disabled={downloading}
+                                        onClick={handleDownload}
+                                        className="flex items-center justify-center gap-2 w-full h-10 bg-[#007AFF] hover:bg-blue-600 text-white disabled:bg-blue-400 rounded-md text-xs font-bold uppercase tracking-wider transition-colors shadow-sm shadow-blue-100 cursor-pointer"
                                     >
-                                        <FileDown size={14} /> Download PDF Statement
-                                    </a>
+                                        {downloading ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white" />
+                                        ) : (
+                                            <FileDown size={14} />
+                                        )}
+                                        {downloading ? 'Downloading...' : 'Download PDF Statement'}
+                                    </button>
                                 </div>
                             )}
                         </div>
