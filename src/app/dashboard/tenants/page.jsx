@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getTenants, getMonthlyReport, getProperties, getPropertyById, createTenant, deleteTenant, getCurrentMonth, formatCurrency, applyPenalty, removePenalty } from '@/lib/api';
 import { PageHeader, LoadingPage, Badge, EmptyState, MonthPicker, Modal, ConfirmModal } from '@/components/ui';
 import ManualPaymentModal from '@/components/ManualPaymentModal';
@@ -9,6 +10,7 @@ import OnboardTenantModal from '@/components/OnboardTenantModal';
 import { UserPlus, Search, ArrowRight, CreditCard, Trash2, X, Percent, RotateCcw } from 'lucide-react';
 
 export default function TenantsPage() {
+    const router = useRouter();
     const [tenants, setTenants] = useState([]);
     const [statuses, setStatuses] = useState({});
     const [month, setMonth] = useState(getCurrentMonth());
@@ -193,7 +195,11 @@ export default function TenantsPage() {
                                     {filtered.map(t => {
                                         const st = statuses[t.id] || {};
                                         return (
-                                            <tr key={t.id} className="hover:bg-[#F8FAFC] transition-colors group">
+                                            <tr 
+                                                key={t.id} 
+                                                onClick={() => router.push(`/dashboard/tenants/${t.id}`)}
+                                                className="hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
+                                            >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 bg-[#F1F5F9] text-[#64748B] rounded flex items-center justify-center font-semibold text-xs shrink-0">
@@ -212,43 +218,25 @@ export default function TenantsPage() {
                                                 <td className="px-6 py-4 text-[13px] text-[#0F172A]">{formatCurrency(st.expectedAmount || st.expected)}</td>
                                                 <td className="px-6 py-4 text-[13px] font-medium text-[#16A34A]">{formatCurrency(st.amountPaid || st.paid)}</td>
                                                 <td className="px-6 py-4"><Badge status={st.status || 'Unpaid'} /></td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="flex items-center justify-end gap-2">
                                                         {st.status?.toLowerCase() !== 'paid' && (
                                                             t.penaltyApplied ? (
                                                                 <button
-                                                                    onClick={() => handleRemovePenalty(t)}
+                                                                    onClick={(e) => { e.stopPropagation(); handleRemovePenalty(t); }}
                                                                     className="flex items-center gap-1.5 h-7 px-2.5 bg-rose-50 border border-rose-200 rounded text-[11px] font-medium text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                                                                 >
                                                                     <RotateCcw size={11} /> Remove Penalty
                                                                 </button>
                                                             ) : (
                                                                 <button
-                                                                    onClick={() => handleApplyPenalty(t)}
+                                                                    onClick={(e) => { e.stopPropagation(); handleApplyPenalty(t); }}
                                                                     className="flex items-center gap-1.5 h-7 px-2.5 bg-amber-50 border border-amber-200 rounded text-[11px] font-medium text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer"
                                                                 >
                                                                     <Percent size={11} /> Apply Penalty
                                                                 </button>
                                                             )
                                                         )}
-                                                        <button
-                                                            onClick={() => setPayTenant(t)}
-                                                            className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#E2E8F0] rounded text-[11px] font-medium text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors"
-                                                        >
-                                                            <CreditCard size={11} /> Pay
-                                                        </button>
-                                                        <Link
-                                                            href={`/dashboard/tenants/${t.id}`}
-                                                            className="flex items-center gap-1.5 h-7 px-3 bg-[#0F172A] text-white rounded text-[11px] font-medium hover:bg-black transition-colors"
-                                                        >
-                                                            View <ArrowRight size={11} />
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => setDeletingTenant(t)}
-                                                            className="flex items-center gap-1.5 h-7 px-3 bg-white border border-rose-100 rounded text-[11px] font-medium text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer"
-                                                        >
-                                                            <Trash2 size={11} /> Delete
-                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
