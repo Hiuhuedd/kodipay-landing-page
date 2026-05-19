@@ -96,18 +96,23 @@ export default function ClientReportPage() {
         // Filter collections by selected month (format: YYYY-MM)
         const monthlyPayments = (clientDetail.payments || []).filter(pay => {
             if (!pay.createdAt) return false;
-            return pay.createdAt.startsWith(month);
+            const dateStr = typeof pay.createdAt === 'string' ? pay.createdAt : String(pay.createdAt);
+            return dateStr.startsWith(month);
         });
 
         // Filter expenses by selected month
         const monthlyExpenses = (clientDetail.expenses || []).filter(exp => {
             if (!exp.date) return false;
-            return exp.date.startsWith(month);
+            const dateStr = typeof exp.date === 'string' ? exp.date : String(exp.date);
+            return dateStr.startsWith(month);
         });
 
         // Filter payouts by payoutMonth or createdAt starting with month
         const monthlyPayouts = (clientDetail.payouts || []).filter(p => {
-            return p.payoutMonth === month || (p.createdAt && p.createdAt.startsWith(month));
+            const hasPayoutMonth = p.payoutMonth === month;
+            const createdAtStr = p.createdAt ? (typeof p.createdAt === 'string' ? p.createdAt : String(p.createdAt)) : '';
+            const hasCreatedAtMonth = createdAtStr ? createdAtStr.startsWith(month) : false;
+            return hasPayoutMonth || hasCreatedAtMonth;
         });
 
         const grossCollected = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
