@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { getProperties, getPropertyReport, getCurrentMonth, formatCurrency, downloadPropertyReportPdf } from '@/lib/api';
 import { PageHeader, LoadingPage, Badge, EmptyState, MonthPicker, ProgressBar } from '@/components/ui';
 import { FileDown, TrendingUp, TrendingDown, DollarSign, AlertCircle, Users, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function MonthlyReportPage() {
     const [month, setMonth] = useState(getCurrentMonth());
@@ -12,6 +14,7 @@ export default function MonthlyReportPage() {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(false);
     const [propsLoading, setPropsLoading] = useState(true);
+    const pathname = usePathname();
 
     useEffect(() => {
         getProperties()
@@ -51,6 +54,12 @@ export default function MonthlyReportPage() {
         { label: `Commission (${fin.commission?.rate || 0}%)`, value: formatCurrency(fin.commission?.total), icon: Users, color: 'text-[#007AFF]', bg: 'bg-sky-50', border: 'border-sky-100' },
     ];
 
+    const tabs = [
+        { href: '/dashboard/reports/portfolio', label: 'Portfolio Report' },
+        { href: '/dashboard/reports/monthly', label: 'Monthly Property Report' },
+        { href: '/dashboard/reports/tenant', label: 'Tenant Statement' }
+    ];
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* ── Page Header & Controls ── */}
@@ -80,6 +89,26 @@ export default function MonthlyReportPage() {
                         </a>
                     )}
                 </div>
+            </div>
+
+            {/* Reports Custom Sub-Tab Bar */}
+            <div className="flex border-b border-[#E2E8F0]">
+                {tabs.map(t => {
+                    const active = pathname === t.href;
+                    return (
+                        <Link
+                            key={t.href}
+                            href={t.href}
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all ${
+                                active
+                                    ? 'border-[#007AFF] text-[#007AFF]'
+                                    : 'border-transparent text-[#64748B] hover:text-[#0F172A]'
+                            }`}
+                        >
+                            {t.label}
+                        </Link>
+                    );
+                })}
             </div>
 
             <div>

@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { fetchAPI, getCurrentMonth, formatCurrency, downloadPortfolioReportPdf } from '@/lib/api';
 import { PageHeader, LoadingPage, EmptyState, MonthPicker } from '@/components/ui';
 import { FileDown, Building2, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function PortfolioReportPage() {
     const [month, setMonth] = useState(getCurrentMonth());
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
+    const pathname = usePathname();
 
     useEffect(() => {
         setLoading(true);
@@ -27,6 +30,12 @@ export default function PortfolioReportPage() {
         { label: 'Expected', value: formatCurrency(summary.totalExpected), icon: DollarSign, color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' },
         { label: 'Collected', value: formatCurrency(summary.totalCollected), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
         { label: 'Outstanding', value: formatCurrency(summary.totalUnpaid), icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
+    ];
+
+    const tabs = [
+        { href: '/dashboard/reports/portfolio', label: 'Portfolio Report' },
+        { href: '/dashboard/reports/monthly', label: 'Monthly Property Report' },
+        { href: '/dashboard/reports/tenant', label: 'Tenant Statement' }
     ];
 
     return (
@@ -51,6 +60,26 @@ export default function PortfolioReportPage() {
                         </a>
                     )}
                 </div>
+            </div>
+
+            {/* Reports Custom Sub-Tab Bar */}
+            <div className="flex border-b border-[#E2E8F0]">
+                {tabs.map(t => {
+                    const active = pathname === t.href;
+                    return (
+                        <Link
+                            key={t.href}
+                            href={t.href}
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-b-2 -mb-[2px] transition-all ${
+                                active
+                                    ? 'border-[#007AFF] text-[#007AFF]'
+                                    : 'border-transparent text-[#64748B] hover:text-[#0F172A]'
+                            }`}
+                        >
+                            {t.label}
+                        </Link>
+                    );
+                })}
             </div>
 
             <div>
