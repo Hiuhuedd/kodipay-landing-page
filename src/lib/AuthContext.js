@@ -17,13 +17,26 @@ export const AuthProvider = ({ children }) => {
       const docSnap = await getDoc(doc(db, 'users', uid));
       if (docSnap.exists()) {
         const profile = docSnap.data();
+        let agencyStatus = 'active';
+        
+        if (profile.agencyId) {
+          const settingsSnap = await getDoc(doc(db, 'settings', profile.agencyId));
+          if (settingsSnap.exists()) {
+            const settings = settingsSnap.data();
+            if (settings.accountStatus === 'Suspended') {
+              agencyStatus = 'suspended';
+            }
+          }
+        }
+
         return {
           ...baseData,
           role: profile.role || 'subagent',
           agencyId: profile.agencyId,
           assignedProperties: profile.assignedProperties || [],
           name: profile.name || baseData.displayName,
-          status: profile.status || 'active'
+          status: profile.status || 'active',
+          agencyStatus
         };
       }
     } catch (error) {
