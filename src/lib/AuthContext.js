@@ -62,10 +62,12 @@ export const AuthProvider = ({ children }) => {
         
         if (customToken && savedUser) {
             try {
-                setUser({
-                    ...JSON.parse(savedUser),
+                const parsedUser = JSON.parse(savedUser);
+                const fullUser = await fetchUserProfile(parsedUser.uid, {
+                    ...parsedUser,
                     authType: 'custom'
                 });
+                setUser(fullUser);
             } catch (e) {
                 localStorage.removeItem('kp_token');
                 localStorage.removeItem('kp_user');
