@@ -34,6 +34,7 @@ export default function SettingsPage() {
         defaultCurrency: 'KES',
         timezone: 'Africa/Nairobi',
         brandAccent: 'amber',
+        rentDueDay: 5,
         
         // Legacy fallback support
         paymentMethod: 'mpesa',
@@ -275,6 +276,20 @@ export default function SettingsPage() {
                                                 <option value="Africa/Kampala">Africa/Kampala (UTC+3)</option>
                                                 <option value="Africa/Dar_es_Salaam">Africa/Dar es Salaam (UTC+3)</option>
                                                 <option value="UTC">UTC Greenwich Mean Time</option>
+                                            </select>
+                                        </div>
+                                    </FieldGroup>
+                                    <FieldGroup label="Default Rent Due Day of Month" required hint="Default calendar day when rent is due each month for all tenants.">
+                                        <div className="relative">
+                                            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                                            <select 
+                                                className={SelectCls} 
+                                                value={settings.rentDueDay || 5} 
+                                                onChange={e => setVal('rentDueDay', parseInt(e.target.value))}
+                                            >
+                                                {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                                                    <option key={day} value={day}>{day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'} of month</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </FieldGroup>
