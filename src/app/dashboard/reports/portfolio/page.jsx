@@ -14,6 +14,7 @@ export default function PortfolioReportPage() {
     const [reportColor, setReportColor] = useState('#007aff');
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
+    const [error, setError] = useState(null);
 
     const pathname = usePathname();
 
@@ -45,13 +46,23 @@ export default function PortfolioReportPage() {
         }
     };
 
+    const loadReport = () => {
+        setLoading(true);
+        setError(null);
+        fetchAPI(`/reports/portfolio/month/${month}`)
+            .then(d => {
+                setReport(d?.data || d);
+            })
+            .catch(err => {
+                console.error(err);
+                setError(err.message || 'Failed to communicate with reporting server. Server might be waking up or restarting.');
+            })
+            .finally(() => setLoading(false));
+    };
+
     // Fetch portfolio report data
     useEffect(() => {
-        setLoading(true);
-        fetchAPI(`/reports/portfolio/month/${month}`)
-            .then(d => setReport(d?.data || d))
-            .catch(console.error)
-            .finally(() => setLoading(false));
+        loadReport();
     }, [month]);
 
     const pdfUrl = month 
@@ -188,6 +199,23 @@ export default function PortfolioReportPage() {
                         <div className="flex flex-col items-center justify-center min-h-[400px] bg-white border border-[#E2E8F0] rounded-lg">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-b-transparent border-[#007AFF]" />
                             <span className="text-xs text-[#64748B] font-medium mt-3 uppercase tracking-widest animate-pulse">Compiling portfolio overview...</span>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-white border border-[#E2E8F0] rounded-lg p-8 text-center space-y-4 max-w-[680px] mx-auto shadow-sm">
+                            <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 mx-auto">
+                                <AlertCircle size={24} />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Connection Failure</h3>
+                                <p className="text-xs text-[#64748B] max-w-sm mx-auto">{error}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={loadReport}
+                                className="px-4 py-2 bg-[#007AFF] hover:bg-blue-600 text-white rounded-md text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                            >
+                                Retry Connection
+                            </button>
                         </div>
                     ) : !report || props.length === 0 ? (
                         <div className="bg-white border border-[#E2E8F0] rounded-lg">
