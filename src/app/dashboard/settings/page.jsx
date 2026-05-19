@@ -62,9 +62,9 @@ export default function SettingsPage() {
         },
         
         smsTemplates: {
-            rentDue: 'Dear {tenantName}, rent for {propertyName} unit {unitName} is due. Please pay KSh {amount} via Paybill {paybill}. Support: {customerServiceNumber}',
-            rentOverdue: 'Dear {tenantName}, rent of KSh {amount} for {propertyName} unit {unitName} is overdue. Please pay immediately to avoid late penalties. Support: {customerServiceNumber}',
-            paymentConfirmation: 'Hello {tenantName}, we have received KSh {amount} for {propertyName} unit {unitName}. Thank you!'
+            rentDue: 'Dear {tenantName}, rent for unit {unitName} is due. Please pay KSh {amount} via Paybill {paybill}. Support: {customerServiceNumber}',
+            rentOverdue: 'Dear {tenantName}, rent of KSh {amount} for unit {unitName} is overdue. Please pay immediately to avoid late penalties. Support: {customerServiceNumber}',
+            paymentConfirmation: 'Hello {tenantName}, we have received KSh {amount} for unit {unitName}. Thank you!'
         },
         
         penalties: {
@@ -486,7 +486,7 @@ export default function SettingsPage() {
                                     <div className="space-y-4">
                                         <FieldGroup 
                                             label="1. Rent Invoice Due SMS Template" 
-                                            hint="Parameters: {tenantName}, {propertyName}, {unitName}, {amount}, {paybill}, {customerServiceNumber}"
+                                            hint="Parameters: {tenantName}, {unitName}, {amount}, {paybill}, {customerServiceNumber}"
                                         >
                                             <textarea 
                                                 className={TextareaCls}
