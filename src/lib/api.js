@@ -75,6 +75,10 @@ export const deleteTenant = (id) =>
     fetchAPI(`/tenants/${id}`, { method: 'DELETE' });
 export const getPaymentStatus = (id) =>
     fetchAPI(`/tenants/${id}/payment-status`);
+export const applyPenalty = (id) =>
+    fetchAPI(`/tenants/${id}/apply-penalty`, { method: 'POST' });
+export const removePenalty = (id) =>
+    fetchAPI(`/tenants/${id}/remove-penalty`, { method: 'POST' });
 
 // ── Payments ─────────────────────────────────────────────────────────────
 export const getMonthlyReport = (month, propertyIds = null) => {

@@ -205,6 +205,7 @@ export default function OnboardTenantModal({ propertyId, unitId, onClose, onSucc
         phone: '',
         idNumber: '',
         moveInDate: new Date().toISOString().split('T')[0],
+        rentDueDay: '1',
         depositAmount: '',
         paperwork: { copyId: false, signedAgreement: false, passportPhoto: false },
         sendWelcomeSMS: false,
@@ -280,6 +281,7 @@ export default function OnboardTenantModal({ propertyId, unitId, onClose, onSucc
                 idNumber: form.idNumber.trim(),
                 unitCode: selectedUnitId,
                 moveInDate: form.moveInDate,
+                rentDueDay: parseInt(form.rentDueDay) || 1,
                 depositAmount: 0,
                 paperwork: form.paperwork,
                 propertyId: selectedPropertyId,
@@ -415,35 +417,50 @@ export default function OnboardTenantModal({ propertyId, unitId, onClose, onSucc
                                     </div>
                                 </div>
 
-                                {/* ID Number, Move-in Date Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider px-1">ID / Passport Number</label>
-                                        <div className="relative">
-                                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
-                                            <input
-                                                type="text"
-                                                className="w-full h-10 pl-9 pr-4 bg-white border border-[#E2E8F0] rounded-md text-[13px] font-medium text-[#0F172A] focus:border-[#007AFF] outline-none"
-                                                placeholder="National ID or Passport"
-                                                value={form.idNumber}
-                                                onChange={e => setForm({ ...form, idNumber: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider px-1">Move-in Date</label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
-                                            <input
-                                                type="date"
-                                                className="w-full h-10 pl-9 pr-4 bg-white border border-[#E2E8F0] rounded-md text-[13px] font-medium text-[#0F172A] focus:border-[#007AFF] outline-none"
-                                                value={form.moveInDate}
-                                                onChange={e => setForm({ ...form, moveInDate: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                 {/* ID Number, Move-in Date, Rent Due Day Grid */}
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                     <div className="space-y-1.5">
+                                         <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider px-1">ID / Passport Number</label>
+                                         <div className="relative">
+                                             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                                             <input
+                                                 type="text"
+                                                 className="w-full h-10 pl-9 pr-4 bg-white border border-[#E2E8F0] rounded-md text-[13px] font-medium text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                                 placeholder="National ID or Passport"
+                                                 value={form.idNumber}
+                                                 onChange={e => setForm({ ...form, idNumber: e.target.value })}
+                                             />
+                                         </div>
+                                     </div>
+                                     <div className="space-y-1.5">
+                                         <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider px-1">Move-in Date</label>
+                                         <div className="relative">
+                                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                                             <input
+                                                 type="date"
+                                                 className="w-full h-10 pl-9 pr-4 bg-white border border-[#E2E8F0] rounded-md text-[13px] font-medium text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                                 value={form.moveInDate}
+                                                 onChange={e => setForm({ ...form, moveInDate: e.target.value })}
+                                                 required
+                                             />
+                                         </div>
+                                     </div>
+                                     <div className="space-y-1.5">
+                                         <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider px-1">Rent Payment Due Day</label>
+                                         <div className="relative">
+                                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} />
+                                             <select
+                                                 value={form.rentDueDay}
+                                                 onChange={e => setForm({ ...form, rentDueDay: e.target.value })}
+                                                 className="w-full h-10 pl-9 pr-4 bg-white border border-[#E2E8F0] rounded-md text-[13px] font-medium text-[#0F172A] focus:border-[#007AFF] outline-none appearance-none"
+                                             >
+                                                 {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                                                     <option key={day} value={day}>{day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'} of month</option>
+                                                 ))}
+                                             </select>
+                                         </div>
+                                     </div>
+                                 </div>
 
                                 {/* Required Paperwork & Tenant Classification */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-[#F1F5F9]">

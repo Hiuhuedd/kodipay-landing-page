@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getTenants, getMonthlyReport, getProperties, getPropertyById, createTenant, deleteTenant, getCurrentMonth, formatCurrency } from '@/lib/api';
+import { getTenants, getMonthlyReport, getProperties, getPropertyById, createTenant, deleteTenant, getCurrentMonth, formatCurrency, applyPenalty, removePenalty } from '@/lib/api';
 import { PageHeader, LoadingPage, Badge, EmptyState, MonthPicker, Modal, ConfirmModal } from '@/components/ui';
 import ManualPaymentModal from '@/components/ManualPaymentModal';
 import OnboardTenantModal from '@/components/OnboardTenantModal';
-import { UserPlus, Search, ArrowRight, CreditCard, Trash2, X } from 'lucide-react';
+import { UserPlus, Search, ArrowRight, CreditCard, Trash2, X, Percent, RotateCcw } from 'lucide-react';
 
 export default function TenantsPage() {
     const [tenants, setTenants] = useState([]);
@@ -53,6 +53,30 @@ export default function TenantsPage() {
         }
     };
 
+    const handleApplyPenalty = async (tenant) => {
+        if (!confirm(`Are you sure you want to apply the late rent penalty to ${tenant.name}? This will calculate and append the penalty fee to their active invoice/ledger.`)) return;
+        try {
+            const res = await applyPenalty(tenant.id);
+            alert(`Late penalty of KES ${(res.penaltyAmount || res.data?.penaltyAmount || 0).toLocaleString()} applied successfully.`);
+            load();
+        } catch (e) {
+            console.error(e);
+            alert(e.message || 'Failed to apply penalty.');
+        }
+    };
+
+    const handleRemovePenalty = async (tenant) => {
+        if (!confirm(`Are you sure you want to remove the late rent penalty from ${tenant.name}?`)) return;
+        try {
+            await removePenalty(tenant.id);
+            alert('Late penalty removed successfully.');
+            load();
+        } catch (e) {
+            console.error(e);
+            alert(e.message || 'Failed to remove penalty.');
+        }
+    };
+
 
     const filtered = tenants.filter(t => {
         const matchesSearch = !search || 
@@ -62,6 +86,14 @@ export default function TenantsPage() {
             
         if (!matchesSearch) return false;
         if (statusFilter === 'all') return true;
+        
+        if (statusFilter === 'overdue') {
+            const st = statuses[t.id] || {};
+            const isNotPaid = (st.status || 'Unpaid').toLowerCase() !== 'paid';
+            const dueDay = t.rentDueDay || 1;
+            const today = new Date().getDate();
+            return isNotPaid && today > dueDay;
+        }
         
         const st = statuses[t.id] || {};
         const tenantStatus = (st.status || 'Unpaid').toLowerCase();
@@ -113,7 +145,14 @@ export default function TenantsPage() {
                         { id: 'all', label: 'All Tenants', count: tenants.length },
                         { id: 'paid', label: 'Paid', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'paid').length },
                         { id: 'unpaid', label: 'Unpaid', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'unpaid').length },
-                        { id: 'partial', label: 'Partial', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'partial').length }
+                        { id: 'partial', label: 'Partial', count: tenants.filter(t => (statuses[t.id]?.status || 'Unpaid').toLowerCase() === 'partial').length },
+                        { id: 'overdue', label: 'Overdue', count: tenants.filter(t => {
+                            const st = statuses[t.id] || {};
+                            const isNotPaid = (st.status || 'Unpaid').toLowerCase() !== 'paid';
+                            const dueDay = t.rentDueDay || 1;
+                            const today = new Date().getDate();
+                            return isNotPaid && today > dueDay;
+                        }).length }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -124,14 +163,14 @@ export default function TenantsPage() {
                                 : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#0F172A] hover:bg-[#E2E8F0]'
                             }`}
                         >
-                            <span>{tab.label}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                                statusFilter === tab.id
-                                ? 'bg-white/20 text-white'
-                                : 'bg-white border border-[#E2E8F0] text-[#64748B]'
-                            }`}>
-                                {tab.count}
-                            </span>
+                                <span>{tab.label}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                                    statusFilter === tab.id
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-white border border-[#E2E8F0] text-[#64748B]'
+                                }`}>
+                                    {tab.count}
+                                </span>
                         </button>
                     ))}
                 </div>
@@ -175,6 +214,23 @@ export default function TenantsPage() {
                                                 <td className="px-6 py-4"><Badge status={st.status || 'Unpaid'} /></td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        {st.status?.toLowerCase() !== 'paid' && (
+                                                            t.penaltyApplied ? (
+                                                                <button
+                                                                    onClick={() => handleRemovePenalty(t)}
+                                                                    className="flex items-center gap-1.5 h-7 px-2.5 bg-rose-50 border border-rose-200 rounded text-[11px] font-medium text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                                                >
+                                                                    <RotateCcw size={11} /> Remove Penalty
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleApplyPenalty(t)}
+                                                                    className="flex items-center gap-1.5 h-7 px-2.5 bg-amber-50 border border-amber-200 rounded text-[11px] font-medium text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer"
+                                                                >
+                                                                    <Percent size={11} /> Apply Penalty
+                                                                </button>
+                                                            )
+                                                        )}
                                                         <button
                                                             onClick={() => setPayTenant(t)}
                                                             className="flex items-center gap-1.5 h-7 px-3 bg-white border border-[#E2E8F0] rounded text-[11px] font-medium text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors"
