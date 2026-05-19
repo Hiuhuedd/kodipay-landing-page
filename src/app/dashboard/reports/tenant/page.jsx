@@ -120,7 +120,8 @@ export default function TenantStatementPage() {
     const tabs = [
         { href: '/dashboard/reports/portfolio', label: 'Portfolio Report' },
         { href: '/dashboard/reports/monthly', label: 'Monthly Property Report' },
-        { href: '/dashboard/reports/tenant', label: 'Tenant Statement' }
+        { href: '/dashboard/reports/tenant', label: 'Tenant Statement' },
+        { href: '/dashboard/reports/client', label: 'Client Report' }
     ];
 
     return (

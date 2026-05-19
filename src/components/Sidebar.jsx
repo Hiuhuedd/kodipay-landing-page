@@ -39,6 +39,7 @@ const navItems = [
     { href: '/dashboard/reports/portfolio', icon: PieChart, label: 'Portfolio Report' },
     { href: '/dashboard/reports/monthly', icon: Calendar, label: 'Monthly Report' },
     { href: '/dashboard/reports/tenant', icon: Users, label: 'Tenant Statement' },
+    { href: '/dashboard/reports/client', icon: UserCheck, label: 'Client Report' },
     { section: 'Administration' },
     { href: '/dashboard/staff', icon: ShieldCheck, label: 'Staff Management', adminOnly: true },
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing & SMS', adminOnly: true },
