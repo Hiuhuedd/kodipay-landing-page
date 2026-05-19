@@ -74,6 +74,7 @@ export default function ClientManagementPage() {
 
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
+    const [submittingPayout, setSubmittingPayout] = useState(false);
 
     // Fetch clients and properties
     const loadData = useCallback(async (silent = false) => {
@@ -231,10 +232,12 @@ export default function ClientManagementPage() {
         e.preventDefault();
         setFormError('');
         setFormSuccess('');
+        setSubmittingPayout(true);
 
         const amountNum = parseFloat(payoutForm.amount);
         if (isNaN(amountNum) || amountNum <= 0) {
             setFormError('A valid payout amount greater than KSh 0 is required');
+            setSubmittingPayout(false);
             return;
         }
 
@@ -245,7 +248,7 @@ export default function ClientManagementPage() {
             });
 
             if (result.success) {
-                setFormSuccess(`Payout of ${formatCurrency(amountNum)} recorded and client receipt emailed!`);
+                setFormSuccess(`Payment of ${formatCurrency(amountNum)} recorded and client receipt emailed!`);
                 setTimeout(() => {
                     setShowPayoutModal(false);
                     setFormSuccess('');
@@ -254,7 +257,9 @@ export default function ClientManagementPage() {
                 }, 2000);
             }
         } catch (err) {
-            setFormError(err.message || 'Failed to record payout');
+            setFormError(err.message || 'Failed to record payment');
+        } finally {
+            setSubmittingPayout(false);
         }
     };
 
@@ -268,6 +273,7 @@ export default function ClientManagementPage() {
     );
 
     const totalCollected = clients.reduce((acc, c) => acc + (c.totalCollected || 0), 0);
+    const totalCommission = clients.reduce((acc, c) => acc + (c.totalCommission || 0), 0);
     const totalExpenses = clients.reduce((acc, c) => acc + (c.totalExpenses || 0), 0);
     const totalPaid = clients.reduce((acc, c) => acc + (c.totalPaid || 0), 0);
     const totalOutstanding = clients.reduce((acc, c) => acc + (c.outstandingPayout || 0), 0);
@@ -297,7 +303,7 @@ export default function ClientManagementPage() {
             </div>
 
             {/* ── Key Metrics Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <TrendingUp size={20} />
@@ -305,6 +311,16 @@ export default function ClientManagementPage() {
                     <div>
                         <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Total Rent Collected</span>
                         <h3 className="text-lg font-semibold tracking-tight text-[#0F172A] mt-0.5">{formatCurrency(totalCollected)}</h3>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0">
+                        <Percent size={20} />
+                    </div>
+                    <div>
+                        <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Commission Earned</span>
+                        <h3 className="text-lg font-semibold tracking-tight text-[#007AFF] mt-0.5">{formatCurrency(totalCommission)}</h3>
                     </div>
                 </div>
 
@@ -319,7 +335,7 @@ export default function ClientManagementPage() {
                 </div>
 
                 <div className="bg-white border border-[#E2E8F0] rounded-lg p-5 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                         <CreditCard size={20} />
                     </div>
                     <div>
@@ -372,6 +388,7 @@ export default function ClientManagementPage() {
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider w-1/4">Landlord Profile</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-center">Properties</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Collected (Gross)</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Commission</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Expenses Incurred</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Outstanding (Net)</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-[#64748B] uppercase tracking-wider text-right">Total Paid</th>
@@ -415,6 +432,11 @@ export default function ClientManagementPage() {
                                             {/* Total rent collected */}
                                             <td className="px-6 py-4 text-right text-[13px] font-medium text-[#64748B]">
                                                 {formatCurrency(client.totalCollected)}
+                                            </td>
+
+                                            {/* Agency Commission */}
+                                            <td className="px-6 py-4 text-right text-[13px] font-semibold text-blue-600/90">
+                                                {formatCurrency(client.totalCommission || 0)}
                                             </td>
 
                                             {/* Total Expenses Incurred */}
@@ -632,113 +654,143 @@ export default function ClientManagementPage() {
             {/* ── MODAL: Record Payout (Pay Client) ── */}
             {showPayoutModal && (
                 <div className="fixed inset-0 bg-[#0f172a]/45 backdrop-blur-[4px] z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col animate-zoom-in">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col animate-zoom-in">
                         {/* Header */}
                         <div className="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
                             <div>
-                                <h3 className="text-[15px] font-semibold text-[#0F172A]">Disburse & Record Payout</h3>
-                                <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider mt-0.5">Disburse net collected funds to landlord</p>
+                                <h3 className="text-[15px] font-semibold text-[#0F172A]">Record Landlord Payment</h3>
+                                <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider mt-0.5">Record payment of net collected funds to landlord</p>
                             </div>
-                            <button onClick={() => { setShowPayoutModal(false); setSelectedClient(null); }} className="text-[#94A3B8] hover:text-[#0f172a] transition-colors">
+                            <button onClick={() => setShowPayoutModal(false)} className="text-[#94A3B8] hover:text-[#0f172a] transition-colors">
                                 <X size={16} />
                             </button>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleRecordPayout} className="p-6 space-y-4">
+                        <form onSubmit={handleRecordPayout} className="p-5 space-y-3">
                             {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg font-medium">{formError}</div>}
                             {formSuccess && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs rounded-lg font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> {formSuccess}</div>}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Left Column */}
-                                <div className="space-y-4">
-                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-4 text-center">
-                                        <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Available Outstanding Payout</span>
-                                        <h4 className="text-xl font-bold text-[#0F172A] mt-1">{formatCurrency(selectedClient?.outstandingPayout)}</h4>
-                                        <span className="text-[9px] text-[#94A3B8] block mt-1">Disbursed to: {selectedClient?.name}</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Left Column: Financial Ledger Statement */}
+                                <div className="space-y-3">
+                                    {/* Compact Balance Card */}
+                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-4 py-2 flex items-center justify-between">
+                                        <div>
+                                            <span className="text-[9px] text-[#94A3B8] font-bold uppercase tracking-wider block">Available Outstanding Payout</span>
+                                            <span className="text-[9px] text-[#64748B] block mt-0.5">Disbursed to: {selectedClient?.name}</span>
+                                        </div>
+                                        <h4 className="text-lg font-extrabold text-amber-600">{formatCurrency(selectedClient?.outstandingPayout)}</h4>
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Amount (KSh) *</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            step="0.01"
-                                            min="0.01"
-                                            max={selectedClient?.outstandingPayout}
-                                            placeholder="Enter payout amount"
-                                            value={payoutForm.amount}
-                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
-                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-semibold"
-                                        />
+                                    {/* Compact Remittance Statement */}
+                                    <div className="bg-[#F8FAFC]/55 border border-[#E2E8F0] rounded-lg px-4 py-2.5">
+                                        <span className="text-[9px] text-[#94A3B8] font-bold uppercase tracking-wider block mb-2 text-center">Remittance Calculation Statement</span>
+                                        <div className="space-y-1.5 text-[11px] text-[#475569]">
+                                            <div className="flex justify-between items-center">
+                                                <span>Gross Rent Collected</span>
+                                                <span className="font-semibold text-[#0F172A]">{formatCurrency(selectedClient?.totalCollected || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-blue-600">
+                                                <span>Agency Commission Deducted</span>
+                                                <span className="font-semibold">- {formatCurrency(selectedClient?.totalCommission || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-red-600">
+                                                <span>Operating Expenses Incurred</span>
+                                                <span className="font-semibold">- {formatCurrency(selectedClient?.totalExpenses || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[#64748B] pb-1.5 border-b border-[#F1F5F9]">
+                                                <span>Total Disbursed Already</span>
+                                                <span className="font-semibold">- {formatCurrency(selectedClient?.totalPaid || 0)}</span>
+                                            </div>
+                                            <div className="pt-1 flex justify-between items-center font-bold text-[#0F172A] text-xs">
+                                                <span>Net Outstanding Payout</span>
+                                                <span className="text-amber-600">{formatCurrency(selectedClient?.outstandingPayout || 0)}</span>
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                {/* Right Column: Input Actions */}
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-3 gap-3">
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Disbursal Method *</label>
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Amount (KSh) *</label>
+                                            <input
+                                                type="number"
+                                                required
+                                                step="0.01"
+                                                min="0.01"
+                                                max={selectedClient?.outstandingPayout}
+                                                placeholder="Amount"
+                                                value={payoutForm.amount}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-semibold"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Method *</label>
                                             <select
                                                 value={payoutForm.paymentMethod}
                                                 onChange={(e) => setPayoutForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase"
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase font-semibold"
                                             >
-                                                <option value="mpesa">M-Pesa Paybill</option>
-                                                <option value="bank">Bank Transfer</option>
-                                                <option value="cash">Cash Disbursal</option>
+                                                <option value="mpesa">M-Pesa</option>
+                                                <option value="bank">Bank</option>
+                                                <option value="cash">Cash</option>
                                             </select>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Payout Month *</label>
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Month *</label>
                                             <input
                                                 type="month"
                                                 required
                                                 value={payoutForm.payoutMonth}
                                                 onChange={(e) => setPayoutForm(prev => ({ ...prev, payoutMonth: e.target.value }))}
-                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
                                             />
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Right Column */}
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Reference Number (M-Pesa or Bank ID)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. QXX890J23K or TXN-2908"
-                                            value={payoutForm.referenceNumber}
-                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
-                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-mono font-bold uppercase"
-                                        />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Reference Number</label>
+                                            <input
+                                                type="text"
+                                                placeholder="MPesa / Bank ID"
+                                                value={payoutForm.referenceNumber}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-mono font-bold uppercase"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 pt-4">
+                                            <input
+                                                type="checkbox"
+                                                id="chk-email-payout-opt"
+                                                defaultChecked
+                                                disabled
+                                                className="rounded border-[#E2E8F0] text-[#007AFF] focus:ring-[#007AFF]"
+                                            />
+                                            <label htmlFor="chk-email-payout-opt" className="text-[10px] font-medium text-[#64748B] flex items-center gap-1 leading-tight truncate" title={selectedClient?.email}>
+                                                <Mail size={11} className="text-[#94A3B8] shrink-0" />
+                                                <span className="truncate">Email to <span className="font-bold text-[#0F172A]">{selectedClient?.email || 'landlord'}</span></span>
+                                            </label>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Transaction Notes / Email Description</label>
+                                        <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Transaction Notes</label>
                                         <textarea
-                                            placeholder="Include payment notes that will be detailed on client receipt..."
+                                            placeholder="Include payment notes for client receipt..."
                                             value={payoutForm.notes}
                                             onChange={(e) => setPayoutForm(prev => ({ ...prev, notes: e.target.value }))}
-                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-2 px-3 text-[13px] outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-[72px] resize-none"
+                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-1.5 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-[52px] resize-none"
                                         />
-                                    </div>
-
-                                    <div className="flex items-center gap-2 pt-2">
-                                        <input
-                                            type="checkbox"
-                                            id="chk-email-payout"
-                                            defaultChecked
-                                            disabled
-                                            className="rounded border-[#E2E8F0] text-[#007AFF] focus:ring-[#007AFF]"
-                                        />
-                                        <label htmlFor="chk-email-payout" className="text-[11px] font-medium text-[#64748B] flex items-center gap-1.5 leading-tight">
-                                            <Mail size={12} className="text-[#94A3B8] shrink-0" />
-                                            <span>Email payment receipt to <span className="font-bold text-[#0F172A]">{selectedClient?.email || 'landlord'}</span></span>
-                                        </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E2E8F0]">
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
                                 <button
                                     type="button"
                                     onClick={() => { setShowPayoutModal(false); setSelectedClient(null); }}
@@ -748,9 +800,11 @@ export default function ClientManagementPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="h-9 px-4 rounded-md bg-amber-500 hover:bg-amber-600 text-white font-semibold text-[12px] transition-colors flex items-center gap-1"
+                                    disabled={submittingPayout}
+                                    className="h-9 px-4 rounded-md bg-amber-500 hover:bg-amber-600 text-white font-semibold text-[12px] transition-colors flex items-center gap-1.5"
                                 >
-                                    Record Disbursal
+                                    {submittingPayout ? <Loader2 size={12} className="animate-spin" /> : <ArrowUpRight size={12} />}
+                                    <span>Record Payment</span>
                                 </button>
                             </div>
                         </form>

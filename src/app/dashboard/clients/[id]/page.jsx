@@ -21,7 +21,9 @@ import {
     Briefcase,
     Calendar,
     Settings,
-    FileText
+    FileText,
+    Percent,
+    CheckCircle2
 } from 'lucide-react';
 import { 
     fetchAPI, 
@@ -177,7 +179,7 @@ export default function LandlordDetailPage() {
             </div>
 
             {/* ── Key Metrics Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center gap-4 shadow-sm">
                     <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <TrendingUp size={20} />
@@ -185,6 +187,16 @@ export default function LandlordDetailPage() {
                     <div>
                         <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Gross Collected</span>
                         <h3 className="text-lg font-bold tracking-tight text-[#0F172A] mt-0.5">{formatCurrency(client.totalCollected)}</h3>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center gap-4 shadow-sm">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#007AFF] flex items-center justify-center shrink-0">
+                        <Percent size={20} />
+                    </div>
+                    <div>
+                        <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Commission Deducted</span>
+                        <h3 className="text-lg font-bold tracking-tight text-[#007AFF] mt-0.5">{formatCurrency(client.totalCommission)}</h3>
                     </div>
                 </div>
 
@@ -199,7 +211,7 @@ export default function LandlordDetailPage() {
                 </div>
 
                 <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center gap-4 shadow-sm">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                         <CreditCard size={20} />
                     </div>
                     <div>
@@ -215,38 +227,6 @@ export default function LandlordDetailPage() {
                     <div>
                         <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Outstanding (Net)</span>
                         <h3 className={`text-lg font-bold tracking-tight mt-0.5 ${client.outstandingPayout > 0 ? 'text-amber-600' : 'text-[#0F172A]'}`}>{formatCurrency(client.outstandingPayout)}</h3>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Remittance Details & Internal Notes ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm col-span-2">
-                    <h3 className="text-xs font-bold text-[#64748B] uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <CreditCard size={14} className="text-[#94A3B8]" />
-                        Remittance & Payout Instructions
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
-                            <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Preferred Remittance Method</span>
-                            <span className="text-sm font-bold text-[#0F172A] uppercase block mt-1.5">{client.payoutMethod || 'M-Pesa'}</span>
-                        </div>
-                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
-                            <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Remittance Details / Account</span>
-                            <span className="text-sm font-semibold text-[#0F172A] block mt-1.5 truncate" title={client.payoutDetails}>{client.payoutDetails || '—'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-xs font-bold text-[#64748B] uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <FileText size={14} className="text-[#94A3B8]" />
-                            Internal Notes
-                        </h3>
-                        <p className="text-[13px] text-[#64748B] italic leading-relaxed">
-                            {client.notes ? `"${client.notes}"` : 'No administrative notes recorded.'}
-                        </p>
                     </div>
                 </div>
             </div>
@@ -427,124 +407,192 @@ export default function LandlordDetailPage() {
                 </div>
             </div>
 
+            {/* ── Remittance Details & Internal Notes ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm col-span-2">
+                    <h3 className="text-xs font-bold text-[#64748B] uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <CreditCard size={14} className="text-[#94A3B8]" />
+                        Remittance & Payout Instructions
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+                            <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Preferred Remittance Method</span>
+                            <span className="text-sm font-bold text-[#0F172A] uppercase block mt-1.5">{client.payoutMethod || 'M-Pesa'}</span>
+                        </div>
+                        <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg">
+                            <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider block">Remittance Details / Account</span>
+                            <span className="text-sm font-semibold text-[#0F172A] block mt-1.5 truncate" title={client.payoutDetails}>{client.payoutDetails || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 className="text-xs font-bold text-[#64748B] uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <FileText size={14} className="text-[#94A3B8]" />
+                            Internal Notes
+                        </h3>
+                        <p className="text-[13px] text-[#64748B] italic leading-relaxed">
+                            {client.notes ? `"${client.notes}"` : 'No administrative notes recorded.'}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* ── DISBURSAL MODAL ── */}
             {showPayoutModal && (
                 <div className="fixed inset-0 bg-[#0f172a]/45 backdrop-blur-[4px] z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-zoom-in">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col animate-zoom-in">
                         {/* Header */}
                         <div className="px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
                             <div>
-                                <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider">Record Landlord Payout</h3>
-                                <p className="text-[10px] text-[#94A3B8] uppercase tracking-widest font-medium mt-0.5">Disburse net balance and trigger email receipt</p>
+                                <h3 className="text-[15px] font-semibold text-[#0F172A]">Record Landlord Payment</h3>
+                                <p className="text-[10px] text-[#94A3B8] uppercase tracking-wider mt-0.5">Record payment of net collected funds to landlord</p>
                             </div>
-                            <button 
-                                onClick={() => setShowPayoutModal(false)}
-                                className="h-7 w-7 rounded bg-slate-50 hover:bg-slate-100 border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] transition-colors"
-                            >
-                                <X size={14} />
+                            <button onClick={() => setShowPayoutModal(false)} className="text-[#94A3B8] hover:text-[#0f172a] transition-colors">
+                                <X size={16} />
                             </button>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handlePayoutSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-                            {modalError && (
-                                <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-xs font-medium text-red-600">
-                                    {modalError}
-                                </div>
-                            )}
+                        <form onSubmit={handlePayoutSubmit} className="p-5 space-y-3">
+                            {modalError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg font-medium">{modalError}</div>}
+                            {modalSuccess && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs rounded-lg font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> {modalSuccess}</div>}
 
-                            {modalSuccess && (
-                                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-xs font-semibold text-emerald-700">
-                                    {modalSuccess}
-                                </div>
-                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Left Column: Financial Ledger Statement */}
+                                <div className="space-y-3">
+                                    {/* Compact Balance Card */}
+                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-4 py-2 flex items-center justify-between">
+                                        <div>
+                                            <span className="text-[9px] text-[#94A3B8] font-bold uppercase tracking-wider block">Available Outstanding Payout</span>
+                                            <span className="text-[9px] text-[#64748B] block mt-0.5">Disbursed to: {client.name}</span>
+                                        </div>
+                                        <h4 className="text-lg font-extrabold text-amber-600">{formatCurrency(client.outstandingPayout)}</h4>
+                                    </div>
 
-                            <div>
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Max Outstanding Net Due</label>
-                                <div className="p-3 bg-amber-50/50 border border-amber-100 text-amber-700 font-bold text-sm rounded-lg">
-                                    {formatCurrency(client.outstandingPayout)}
+                                    {/* Compact Remittance Statement */}
+                                    <div className="bg-[#F8FAFC]/55 border border-[#E2E8F0] rounded-lg px-4 py-2.5">
+                                        <span className="text-[9px] text-[#94A3B8] font-bold uppercase tracking-wider block mb-2 text-center">Remittance Calculation Statement</span>
+                                        <div className="space-y-1.5 text-[11px] text-[#475569]">
+                                            <div className="flex justify-between items-center">
+                                                <span>Gross Rent Collected</span>
+                                                <span className="font-semibold text-[#0F172A]">{formatCurrency(client.totalCollected || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-blue-600">
+                                                <span>Agency Commission Deducted</span>
+                                                <span className="font-semibold">- {formatCurrency(client.totalCommission || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-red-600">
+                                                <span>Operating Expenses Incurred</span>
+                                                <span className="font-semibold">- {formatCurrency(client.totalExpenses || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[#64748B] pb-1.5 border-b border-[#F1F5F9]">
+                                                <span>Total Disbursed Already</span>
+                                                <span className="font-semibold">- {formatCurrency(client.totalPaid || 0)}</span>
+                                            </div>
+                                            <div className="pt-1 flex justify-between items-center font-bold text-[#0F172A] text-xs">
+                                                <span>Net Outstanding Payout</span>
+                                                <span className="text-amber-600">{formatCurrency(client.outstandingPayout || 0)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Input Actions */}
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Amount (KSh) *</label>
+                                            <input
+                                                type="number"
+                                                required
+                                                step="0.01"
+                                                min="0.01"
+                                                max={client.outstandingPayout}
+                                                placeholder="Amount"
+                                                value={payoutForm.amount}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-semibold"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Method *</label>
+                                            <select
+                                                value={payoutForm.paymentMethod}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] uppercase font-semibold"
+                                            >
+                                                <option value="mpesa">M-Pesa</option>
+                                                <option value="bank">Bank</option>
+                                                <option value="cash">Cash</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Month *</label>
+                                            <input
+                                                type="month"
+                                                required
+                                                value={payoutForm.payoutMonth}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, payoutMonth: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A]"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Reference Number</label>
+                                            <input
+                                                type="text"
+                                                placeholder="MPesa / Bank ID"
+                                                value={payoutForm.referenceNumber}
+                                                onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
+                                                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md h-9 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] font-mono font-bold uppercase"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 pt-4">
+                                            <input
+                                                type="checkbox"
+                                                id="chk-email-payout-opt"
+                                                defaultChecked
+                                                disabled
+                                                className="rounded border-[#E2E8F0] text-[#007AFF] focus:ring-[#007AFF]"
+                                            />
+                                            <label htmlFor="chk-email-payout-opt" className="text-[10px] font-medium text-[#64748B] flex items-center gap-1 leading-tight truncate" title={client.email}>
+                                                <Mail size={11} className="text-[#94A3B8] shrink-0" />
+                                                <span className="truncate">Email to <span className="font-bold text-[#0F172A]">{client.email || 'landlord'}</span></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block">Transaction Notes</label>
+                                        <textarea
+                                            placeholder="Include payment notes for client receipt..."
+                                            value={payoutForm.notes}
+                                            onChange={(e) => setPayoutForm(prev => ({ ...prev, notes: e.target.value }))}
+                                            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-md py-1.5 px-2 text-xs outline-none focus:border-[#007AFF] transition-colors text-[#0F172A] h-[52px] resize-none"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Disbursed Amount (KES)</label>
-                                    <input 
-                                        type="number" 
-                                        step="any"
-                                        required
-                                        placeholder="Enter amount..."
-                                        value={payoutForm.amount}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, amount: e.target.value }))}
-                                        className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold outline-none focus:border-[#0F172A] transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Payout Month</label>
-                                    <input 
-                                        type="month" 
-                                        required
-                                        value={payoutForm.payoutMonth}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, payoutMonth: e.target.value }))}
-                                        className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold outline-none focus:border-[#0F172A] transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Disbursal Method</label>
-                                    <select
-                                        value={payoutForm.paymentMethod}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                                        className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold outline-none focus:border-[#0F172A] transition-colors"
-                                    >
-                                        <option value="mpesa">M-Pesa</option>
-                                        <option value="bank">Bank Transfer</option>
-                                        <option value="cash">Cash / Cheque</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Reference Number</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. QTX7619208..."
-                                        value={payoutForm.referenceNumber}
-                                        onChange={(e) => setPayoutForm(prev => ({ ...prev, referenceNumber: e.target.value }))}
-                                        className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold outline-none focus:border-[#0F172A] transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block mb-1.5">Administrative Notes / Memo</label>
-                                <textarea
-                                    rows="2"
-                                    placeholder="Add payout description or bank info..."
-                                    value={payoutForm.notes}
-                                    onChange={(e) => setPayoutForm(prev => ({ ...prev, notes: e.target.value }))}
-                                    className="w-full p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold outline-none focus:border-[#0F172A] transition-colors resize-none"
-                                />
-                            </div>
-
-                            {/* Footer */}
-                            <div className="border-t border-[#E2E8F0] pt-4 flex justify-end gap-3 shrink-0">
-                                <button 
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
+                                <button
                                     type="button"
                                     onClick={() => setShowPayoutModal(false)}
-                                    className="h-9 px-4 bg-white border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC]"
+                                    className="h-9 px-4 rounded-md border border-[#E2E8F0] hover:bg-slate-50 transition-colors text-[12px] font-semibold text-[#64748B]"
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button
                                     type="submit"
                                     disabled={submittingPayout}
-                                    className="h-9 px-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                                    className="h-9 px-4 rounded-md bg-amber-500 hover:bg-amber-600 text-white font-semibold text-[12px] transition-colors flex items-center gap-1.5"
                                 >
                                     {submittingPayout ? <Loader2 size={12} className="animate-spin" /> : <ArrowUpRight size={12} />}
-                                    Confirm Disbursal
+                                    <span>Record Payment</span>
                                 </button>
                             </div>
                         </form>
