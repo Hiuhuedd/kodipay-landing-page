@@ -251,22 +251,6 @@ export default function PortfolioReportPage() {
 
                             {/* Main Content Area */}
                             <div className="p-8 space-y-6">
-                                {/* Aggregated KPI blocks */}
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-center">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider block">Total Expected</span>
-                                        <span className="text-base font-bold text-slate-800 block mt-1 tabular-nums">{formatCurrency(summary.totalExpected)}</span>
-                                    </div>
-                                    <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-center">
-                                        <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wider block">Total Collected</span>
-                                        <span className="text-base font-bold text-emerald-600 block mt-1 tabular-nums">{formatCurrency(summary.totalCollected)}</span>
-                                    </div>
-                                    <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 text-center">
-                                        <span className="text-[9px] font-black text-rose-800 uppercase tracking-wider block">Total Unpaid</span>
-                                        <span className="text-base font-bold text-rose-600 block mt-1 tabular-nums">{formatCurrency(summary.totalUnpaid)}</span>
-                                    </div>
-                                </div>
-
                                 {/* Property Breakdown table */}
                                 <div className="space-y-3">
                                     <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider border-b border-[#F1F5F9] pb-2">Property Breakdown</h3>
@@ -299,6 +283,22 @@ export default function PortfolioReportPage() {
                                                 ))}
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+
+                                {/* Aggregated KPI blocks */}
+                                <div className="grid grid-cols-3 gap-4 pt-2">
+                                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-center">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider block">Total Expected</span>
+                                        <span className="text-base font-bold text-slate-800 block mt-1 tabular-nums">{formatCurrency(summary.totalExpected)}</span>
+                                    </div>
+                                    <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-center">
+                                        <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wider block">Total Collected</span>
+                                        <span className="text-base font-bold text-emerald-600 block mt-1 tabular-nums">{formatCurrency(summary.totalCollected)}</span>
+                                    </div>
+                                    <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 text-center">
+                                        <span className="text-[9px] font-black text-rose-800 uppercase tracking-wider block">Total Unpaid</span>
+                                        <span className="text-base font-bold text-rose-600 block mt-1 tabular-nums">{formatCurrency(summary.totalUnpaid)}</span>
                                     </div>
                                 </div>
 
