@@ -225,12 +225,24 @@ export default function TenantDetailPage() {
                                 <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0] pb-2">
                                     Allocated Items
                                 </div>
-                                {Object.entries(statement.breakdown).map(([key, val]) => (
-                                    <div key={key} className="flex justify-between items-center text-xs">
-                                        <span className="text-[#64748B] capitalize">{key}</span>
-                                        <span className="font-semibold text-[#0F172A]">{formatCurrency(val)}</span>
-                                    </div>
-                                ))}
+                                {Object.entries(statement.breakdown)
+                                    .filter(([_, val]) => val > 0)
+                                    .map(([key, val]) => {
+                                        let label = key;
+                                        if (key === 'garbageFee') label = 'Garbage Fee';
+                                        else if (key === 'waterBill') label = 'Water Bill';
+                                        else if (key === 'electricityBill') label = 'Electricity Bill';
+                                        else if (key === 'rent') label = 'Rent';
+                                        else if (key === 'deposit') label = 'Deposit';
+                                        else if (key === 'penalties') label = 'Penalties';
+                                        
+                                        return (
+                                            <div key={key} className="flex justify-between items-center text-xs">
+                                                <span className="text-[#64748B] capitalize">{label}</span>
+                                                <span className="font-semibold text-[#0F172A]">{formatCurrency(val)}</span>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         )}
                     </div>
