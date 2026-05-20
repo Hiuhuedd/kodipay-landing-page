@@ -207,3 +207,10 @@ export function statusColor(status = '') {
     if (s === 'partial') return 'partial';
     return 'unpaid';
 }
+
+// ── Demo Requests ────────────────────────────────────────────────────────
+export const submitDemoRequest = (data) =>
+    fetchAPI('/superadmin/demo-requests', { method: 'POST', body: JSON.stringify(data) });
+export const getDemoRequests = () => fetchAPI('/superadmin/demo-requests');
+export const updateDemoRequestStatus = (id, status) =>
+    fetchAPI(`/superadmin/demo-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });

@@ -137,10 +137,10 @@ export default function RecordPaymentPage() {
                                     </div>
 
                                     <div className="flex flex-col items-end gap-1 text-right">
-                                        {t.arrears > 0 ? (
+                                        {outstanding > 0 ? (
                                             <div className="flex flex-col items-end">
                                                 <p className="text-[10px] font-medium text-[#94A3B8] uppercase tracking-widest mb-1">Total Due</p>
-                                                <p className="text-[15px] font-semibold text-[#DC2626] tabular-nums">{formatCurrency(t.arrears)}</p>
+                                                <p className="text-[15px] font-semibold text-[#DC2626] tabular-nums">{formatCurrency(outstanding)}</p>
                                                 <div className="flex items-center gap-1.5 mt-1">
                                                     <span className="text-[9px] font-medium text-[#64748B] uppercase tracking-widest">Select to pay</span>
                                                     <ArrowRight size={10} className="text-[#94A3B8]" />

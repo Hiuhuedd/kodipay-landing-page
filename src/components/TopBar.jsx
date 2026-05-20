@@ -126,6 +126,23 @@ export default function TopBar() {
                 <h1 className="text-[15px] font-semibold text-[#0F172A] tracking-tight">
                     {getTitle()}
                 </h1>
+                {user?.subscription?.status === 'trial' ? (
+                    <button
+                        onClick={() => router.push('/dashboard/billing')}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition-all shadow-sm cursor-pointer animate-pulse"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        TRIAL / DEMO
+                        <span className="text-[9px] font-medium text-amber-600 px-1 py-0.5 rounded bg-amber-200/40 ml-1 font-black">UPGRADE</span>
+                    </button>
+                ) : (
+                    user?.subscription?.activePlan && user?.subscription?.activePlan !== 'starter_trial' && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-extrabold text-emerald-700 shadow-sm uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            {user.subscription.activePlan} Plan
+                        </div>
+                    )
+                )}
             </div>
 
             <div className="flex items-center gap-6">

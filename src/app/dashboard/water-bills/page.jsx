@@ -58,7 +58,7 @@ export default function WaterBillsPage() {
                 const matchedTenant = tenants.find(t => 
                     t.propertyId === selectedProp && 
                     t.unitCode === b.unitId &&
-                    t.tenantStatus === 'active'
+                    (!t.tenantStatus || t.tenantStatus === 'active')
                 );
 
                 return {

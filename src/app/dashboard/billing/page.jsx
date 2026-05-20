@@ -9,8 +9,12 @@ import {
     FileText, UserPlus, Zap as ElectricIcon, Droplets, Bell
 } from 'lucide-react';
 import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function BillingPage() {
+    const { user, refreshUser } = useAuth();
     const [usage, setUsage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -18,18 +22,47 @@ export default function BillingPage() {
     const [success, setSuccess] = useState(false);
     const [mpesaPhone, setMpesaPhone] = useState('');
 
+    // Dynamic pricing state loaded from Firestore
+    const [prices, setPrices] = useState({
+        starter: 3200,
+        growth: 6500,
+        professional: 15000,
+        enterprise: 45000
+    });
+
     useEffect(() => {
+        // Fetch SMS usage
         getSmsUsage()
             .then(d => setUsage(d?.data || d))
             .catch(console.error)
             .finally(() => setLoading(false));
+
+        // Fetch dynamic pricing tiers
+        const fetchPrices = async () => {
+            try {
+                const settingsRef = doc(db, 'settings', 'app-settings');
+                const settingsSnap = await getDoc(settingsRef);
+                if (settingsSnap.exists() && settingsSnap.data().planPrices) {
+                    const savedPrices = settingsSnap.data().planPrices;
+                    setPrices({
+                        starter: savedPrices.starter !== undefined ? Number(savedPrices.starter) : 3200,
+                        growth: savedPrices.growth !== undefined ? Number(savedPrices.growth) : 6500,
+                        professional: savedPrices.professional !== undefined ? Number(savedPrices.professional) : 15000,
+                        enterprise: savedPrices.enterprise !== undefined ? Number(savedPrices.enterprise) : 45000,
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load dynamic plan pricing:", err);
+            }
+        };
+        fetchPrices();
     }, []);
 
     const subscriptionPlans = [
         {
             id: 'starter',
             name: 'Starter Plan',
-            price: 'KSh 3,200',
+            price: `KSh ${prices.starter.toLocaleString()}`,
             period: 'per month',
             description: 'Essential management tools for small to mid-sized portfolios.',
             cta: 'Activate Starter',
@@ -48,7 +81,7 @@ export default function BillingPage() {
         {
             id: 'growth',
             name: 'Growth Plan',
-            price: 'KSh 6,500',
+            price: `KSh ${prices.growth.toLocaleString()}`,
             period: 'per month',
             popular: true,
             description: 'Advanced capabilities for growing agencies and managers.',
@@ -71,7 +104,7 @@ export default function BillingPage() {
         {
             id: 'professional',
             name: 'Professional Plan',
-            price: 'KSh 15,000',
+            price: `KSh ${prices.professional.toLocaleString()}`,
             period: 'per month',
             description: 'Enterprise control for large professional real estate managers.',
             cta: 'Activate Professional',
@@ -136,6 +169,39 @@ export default function BillingPage() {
                 throw new Error(res.error || 'Payment request rejected');
             }
 
+            // Perform instant database upgrade for demo sandbox feedback
+            if (user?.agencyId) {
+                const agencyRef = doc(db, 'agencies', user.agencyId);
+                
+                if (selectedPlan.type === 'subscription') {
+                    const propsLimit = selectedPlan.id === 'starter' ? 75 : selectedPlan.id === 'growth' ? 150 : 500;
+                    const smsLimit = selectedPlan.id === 'starter' ? 1500 : selectedPlan.id === 'growth' ? 5000 : 15000;
+                    
+                    await updateDoc(agencyRef, {
+                        'subscription.activePlan': selectedPlan.id,
+                        'subscription.status': 'active',
+                        'subscription.propertiesLimit': propsLimit,
+                        'subscription.smsLimit': smsLimit,
+                        'subscription.startedAt': new Date().toISOString(),
+                        'subscription.nextPaymentAt': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        'smsStats.monthlyLimit': smsLimit
+                    });
+                } else if (selectedPlan.type === 'sms') {
+                    const currentLimit = usage?.monthlyLimit || 2000;
+                    const newLimit = currentLimit + (selectedPlan.units || 0);
+                    
+                    await updateDoc(agencyRef, {
+                        'subscription.smsLimit': newLimit,
+                        'smsStats.monthlyLimit': newLimit
+                    });
+                }
+
+                // Force AuthContext to refresh local profile fields (including header status badges)
+                if (refreshUser) {
+                    await refreshUser();
+                }
+            }
+
             alert(res.message || 'M-Pesa STK Push initiated successfully! Please check your phone for the PIN prompt.');
             setSuccess(true);
             const updated = await getSmsUsage();
@@ -148,7 +214,7 @@ export default function BillingPage() {
                 setSuccess(false);
                 setSelectedPlan(null);
                 setMpesaPhone('');
-            }, 4000);
+            }, 8000);
         } catch (e) {
             console.error(e);
             alert(e.message || 'M-Pesa transaction failed. Please try again.');
@@ -232,16 +298,29 @@ export default function BillingPage() {
                                         {plan.description}
                                     </p>
 
-                                    <button 
-                                        onClick={() => handleSubscriptionAction(plan)}
-                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 ${
-                                            plan.popular 
-                                            ? 'bg-white text-sky-600 hover:bg-slate-50' 
-                                            : 'bg-slate-900 text-white hover:bg-black'
-                                        }`}
-                                    >
-                                        {plan.cta}
-                                    </button>
+                                    {(() => {
+                                         const activePlanId = user?.subscription?.activePlan || 'starter_trial';
+                                         const isCurrent = activePlanId === plan.id;
+                                         const isDowngrade = (activePlanId === 'professional' && (plan.id === 'starter' || plan.id === 'growth')) ||
+                                                             (activePlanId === 'growth' && plan.id === 'starter');
+                                         const isButtonDisabled = isCurrent || isDowngrade;
+
+                                         return (
+                                             <button 
+                                                 onClick={() => !isButtonDisabled && handleSubscriptionAction(plan)}
+                                                 disabled={isButtonDisabled}
+                                                 className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                     isCurrent 
+                                                     ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                                                     : plan.popular 
+                                                     ? 'bg-white text-sky-600 hover:bg-slate-50' 
+                                                     : 'bg-slate-900 text-white hover:bg-black'
+                                                 }`}
+                                             >
+                                                 {isCurrent ? 'Current Plan' : isDowngrade ? 'Contact Support to Downgrade' : plan.cta}
+                                             </button>
+                                         );
+                                     })()}
                                     {plan.footer && (
                                         <p className="text-center text-[10px] font-bold text-slate-400 mt-4 uppercase tracking-widest">
                                             {plan.footer}
@@ -372,12 +451,60 @@ export default function BillingPage() {
                 >
                     <div className="py-2">
                         {success ? (
-                            <div className="text-center py-8 animate-in zoom-in duration-300">
-                                <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
-                                    <Check size={40} strokeWidth={3} />
+                            <div className="text-center py-8 animate-in zoom-in duration-500 flex flex-col items-center">
+                                {/* Celebratory Pulsing Badge */}
+                                <div className="relative mb-6">
+                                    <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-25" />
+                                    <div className="relative w-20 h-20 bg-gradient-to-tr from-emerald-400 to-teal-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-100">
+                                        <Check size={40} strokeWidth={3} className="animate-bounce" />
+                                    </div>
                                 </div>
-                                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Request Sent!</h3>
-                                <p className="text-sm font-semibold text-slate-500 mt-2">Check your phone to complete your payment.</p>
+
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase tracking-wider mb-3">
+                                    🎉 UPGRADE SUCCESSFUL
+                                </div>
+
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                    Congratulations!
+                                </h3>
+                                <p className="text-xs font-semibold text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                                    Your account has been upgraded to the <span className="text-slate-900 font-bold uppercase">{selectedPlan.name}</span>. Your workspace features and billing quotas are now fully unlocked!
+                                </p>
+
+                                {/* Premium Plan Limits Details */}
+                                <div className="w-full bg-[#F8FAFC] border border-slate-100 rounded-2xl p-5 mt-6 space-y-3.5 text-left text-xs font-bold text-slate-700 shadow-inner">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Active Workspace Plan</span>
+                                        <span className="text-slate-900 uppercase font-black">{selectedPlan.name}</span>
+                                    </div>
+                                    <div className="h-px bg-slate-200" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Properties Limit</span>
+                                        <span className="text-[#007AFF] font-black">
+                                            {selectedPlan.type === 'sms' ? 'Unchanged' : (selectedPlan.id === 'starter' ? '75 Properties' : selectedPlan.id === 'growth' ? '150 Properties' : '500 Properties')}
+                                        </span>
+                                    </div>
+                                    <div className="h-px bg-slate-200" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Total Monthly SMS Quota</span>
+                                        <span className="text-emerald-600 font-black">
+                                            {selectedPlan.type === 'sms' 
+                                                ? `${((usage?.monthlyLimit || 2000) + (selectedPlan.units || 0)).toLocaleString()} Units` 
+                                                : (selectedPlan.id === 'starter' ? '1,500 Units' : selectedPlan.id === 'growth' ? '5,000 Units' : '15,000 Units')}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        setSuccess(false);
+                                        setSelectedPlan(null);
+                                        setMpesaPhone('');
+                                    }}
+                                    className="w-full mt-6 py-4 bg-slate-950 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-md shadow-slate-200"
+                                >
+                                    Dismiss & Continue
+                                </button>
                             </div>
                         ) : (
                             <>

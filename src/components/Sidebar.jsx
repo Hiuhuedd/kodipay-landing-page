@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -43,7 +43,161 @@ const navItems = [
     { section: 'Administration' },
     { href: '/dashboard/staff', icon: ShieldCheck, label: 'Staff Management', adminOnly: true },
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing & SMS', adminOnly: true },
+    { href: '/dashboard/demo-requests', icon: Users, label: 'Demo Requests', adminOnly: true },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+];
+
+const walkthroughTips = [
+    {
+        path: '/dashboard',
+        title: 'Dashboard Overview',
+        icon: LayoutDashboard,
+        steps: [
+            'Monitor total collections, unpaid rent, and active utility meters.',
+            'Review real-time financial stats and monthly aggregate growth graphs.',
+            'Access superadmin billing tier configuration options directly.'
+        ]
+    },
+    {
+        path: '/dashboard/properties',
+        title: 'Properties Setup',
+        icon: Building2,
+        steps: [
+            'Create physical buildings/estates by clicking "Add Property".',
+            'Define distinct rental units, monthly pricing rates, and details.',
+            'Track utility meter indices per tenant inside each property.'
+        ]
+    },
+    {
+        path: '/dashboard/tenants',
+        title: 'Tenants Directory',
+        icon: Users,
+        steps: [
+            'Click "Onboard Tenant" to allocate occupants to active vacant units.',
+            'Set contract start dates, deposits paid, and contact details.',
+            'Configure tenant custom utility override variables (optional).'
+        ]
+    },
+    {
+        path: '/dashboard/clients',
+        title: 'Client Management',
+        icon: UserCheck,
+        steps: [
+            'Create third-party agency sub-accounts for delegated monitoring.',
+            'Define custom billing frequencies and system limits.',
+            'Oversee independent platform activity streams.'
+        ]
+    },
+    {
+        path: '/dashboard/reminders',
+        title: 'SMS Reminders',
+        icon: Bell,
+        steps: [
+            'Select target properties or specific units with due balances.',
+            'Review the prepared SMS alert text with dynamic balance tags.',
+            'Click "Send Statement" to trigger direct payment prompts via SMS.'
+        ]
+    },
+    {
+        path: '/dashboard/transactions',
+        title: 'Transactions Ledger',
+        icon: CreditCard,
+        steps: [
+            'Review real-time payment notifications (M-Pesa, Cash, Bank).',
+            'Select any record to view payment receipts and audit details.',
+            'Click "Record Manual Payment" for offline collections.'
+        ]
+    },
+    {
+        path: '/dashboard/running-costs',
+        title: 'Running Costs',
+        icon: Receipt,
+        steps: [
+            'Log new physical maintenance bills, fees, and operations.',
+            'Categorize costs (Repairs, Utilities, Taxes) to track overheads.',
+            'Filter expenditures by property or monthly periods.'
+        ]
+    },
+    {
+        path: '/dashboard/water-bills',
+        title: 'Water Utilities',
+        icon: Droplets,
+        steps: [
+            'Record the current water meter index for occupied rooms.',
+            'System multiplies consumption by rate (KES 135/unit) + fee.',
+            'Post generated charges directly to the tenant statement.'
+        ]
+    },
+    {
+        path: '/dashboard/electricity-bills',
+        title: 'Electricity Utilities',
+        icon: Zap,
+        steps: [
+            'Input previous and current kWh meter numbers for each unit.',
+            'KodiPay automates tiered power rate logic instantly.',
+            'Generate clean digital power receipts ready to send.'
+        ]
+    },
+    {
+        path: '/dashboard/reports/portfolio',
+        title: 'Portfolio Reports',
+        icon: PieChart,
+        steps: [
+            'Generate dynamic landlord payout sheets and statements.',
+            'Review unpaid arrears rosters and total collected rents.',
+            'Export tax audits and financial data tables to PDF files.'
+        ]
+    },
+    {
+        path: '/dashboard/reports/monthly',
+        title: 'Monthly Reports',
+        icon: Calendar,
+        steps: [
+            'Verify collection history across specific rental intervals.',
+            'Audit agent performance levels and collections success rates.',
+            'Calculate net profits after operational expenditures.'
+        ]
+    },
+    {
+        path: '/dashboard/reports/tenant',
+        title: 'Tenant Statements',
+        icon: Users,
+        steps: [
+            'Produce detailed billing invoice audit charts per occupant.',
+            'Audit outstanding credit balances or prepayments.',
+            'Send custom PDF statements directly to the tenant.'
+        ]
+    },
+    {
+        path: '/dashboard/staff',
+        title: 'Staff Management',
+        icon: ShieldCheck,
+        steps: [
+            'Add management agents and assign specific property clusters.',
+            'Audits real-time collection rates and performance indexes.',
+            'Disable active staff logins instantly when required.'
+        ]
+    },
+    {
+        path: '/dashboard/billing',
+        title: 'Billing & SMS Quotas',
+        icon: CreditCard,
+        steps: [
+            'Track monthly message consumption against system limits.',
+            'Buy one-time bulk SMS packages (A-la-carte bundles).',
+            'Upgrade workspace licenses (Starter, Growth, Pro) dynamically.'
+        ]
+    },
+    {
+        path: '/dashboard/settings',
+        title: 'Settings Board',
+        icon: Settings,
+        steps: [
+            'Update company legal name, contact numbers, and headers.',
+            'Configure default billing due dates and automated penalty rates.',
+            'Draft global template messages for payment reminders.'
+        ]
+    }
 ];
 
 export default function Sidebar() {
@@ -52,6 +206,27 @@ export default function Sidebar() {
     const [isExpanded, setIsExpanded] = useState(false);
     const { logout, user } = useAuth();
     const isAdmin = user?.role === 'admin';
+
+    const [dismissed, setDismissed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('kp_walkthrough_dismissed') === 'true';
+        }
+        return false;
+    });
+
+    const [tipIndex, setTipIndex] = useState(-1);
+
+    // Dynamic guide tracking that updates on page change
+    const activeTip = tipIndex !== -1 
+        ? walkthroughTips[tipIndex]
+        : (walkthroughTips.find(tip => 
+            tip.path === pathname || 
+            (tip.path !== '/dashboard' && pathname?.startsWith(tip.path))
+        ) || walkthroughTips[0]);
+
+    useEffect(() => {
+        setTipIndex(-1);
+    }, [pathname]);
 
     const handleLogout = async () => {
         await logout();
@@ -129,6 +304,62 @@ export default function Sidebar() {
                 })}
             </div>
 
+            {/* Walkthrough Helper Tips Box */}
+            {isExpanded && !dismissed && activeTip && (
+                <div className="mx-3 my-2 p-3.5 bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl shadow-lg border border-slate-800 animate-in slide-in-from-bottom-2 duration-300 relative shrink-0">
+                    <button
+                        onClick={() => {
+                            setDismissed(true);
+                            localStorage.setItem('kp_walkthrough_dismissed', 'true');
+                        }}
+                        className="absolute top-2 right-2 text-slate-500 hover:text-white transition-colors text-[9px] font-bold outline-none"
+                        title="Hide walkthrough guide"
+                    >
+                        ✕
+                    </button>
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-amber-400">
+                            {(() => {
+                                const TipIcon = activeTip.icon;
+                                return <TipIcon size={12} />;
+                            })()}
+                        </div>
+                        <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-300">
+                            {activeTip.title}
+                        </h4>
+                    </div>
+
+                    <div className="space-y-1.5 mt-1">
+                        {activeTip.steps.map((step, idx) => (
+                            <div key={idx} className="flex gap-2 text-left">
+                                <span className="text-[9px] text-amber-400 shrink-0 font-extrabold">•</span>
+                                <p className="text-[9.5px] font-bold text-slate-400 leading-normal">
+                                    {step}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-3 flex justify-between items-center border-t border-white/5 pt-2">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                            Quick Tip
+                        </span>
+                        <button
+                            onClick={() => {
+                                const currentIndex = walkthroughTips.findIndex(t => t.path === activeTip.path);
+                                const nextIndex = (currentIndex + 1) % walkthroughTips.length;
+                                setTipIndex(nextIndex);
+                                router.push(walkthroughTips[nextIndex].path);
+                            }}
+                            className="text-[8px] font-black text-amber-400 hover:text-amber-300 transition-colors uppercase tracking-widest cursor-pointer flex items-center gap-0.5"
+                        >
+                            Next Page <ChevronRight size={10} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Footer */}
             <div className="border-t border-[#E2E8F0] p-3 bg-[#F8FAFC]/50 overflow-hidden shrink-0">
                 <div className="flex items-center gap-3 min-w-max px-1">
@@ -148,13 +379,27 @@ export default function Sidebar() {
                         </p>
                     </div>
                     {isExpanded && (
-                        <button
-                            onClick={handleLogout}
-                            className="p-2 text-[#94A3B8] hover:text-[#DC2626] transition-colors shrink-0"
-                            title="Logout"
-                        >
-                            <LogOut size={16} />
-                        </button>
+                        <>
+                            {dismissed && (
+                                <button
+                                    onClick={() => {
+                                        setDismissed(false);
+                                        localStorage.removeItem('kp_walkthrough_dismissed');
+                                    }}
+                                    className="mr-1 text-[9px] font-black text-sky-600 hover:text-sky-500 transition-colors uppercase tracking-wider shrink-0 border border-sky-100 px-2 py-0.5 rounded bg-sky-50/50 outline-none"
+                                    title="Restore walkthrough tips"
+                                >
+                                    Tips
+                                </button>
+                            )}
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 text-[#94A3B8] hover:text-[#DC2626] transition-colors shrink-0 outline-none"
+                                title="Logout"
+                            >
+                                <LogOut size={16} />
+                            </button>
+                        </>
                     )}
                 </div>
                 {!isExpanded && (

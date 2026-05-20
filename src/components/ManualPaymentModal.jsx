@@ -74,7 +74,7 @@ export default function ManualPaymentModal({ tenant, status, onClose, onSuccess 
         }
     };
 
-    const remaining = status?.remaining || 0;
+    const outstanding = status ? Math.max(0, (status.expectedAmount || status.expected || 0) - (status.amountPaid || status.paid || 0)) : (tenant.arrears || 0);
 
     return (
         <>
@@ -84,7 +84,7 @@ export default function ManualPaymentModal({ tenant, status, onClose, onSuccess 
                         <span className="font-bold">{tenant.name}</span>
                         <span className="text-slate-400 font-medium">Unit: {tenant.unitCode}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="text-rose-600 font-black">Total Due: {formatCurrency(tenant.arrears || 0)}</span>
+                        <span className="text-rose-600 font-black">Total Due: {formatCurrency(outstanding)}</span>
                     </div>
                 }
                 onClose={onClose}

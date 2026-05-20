@@ -7,15 +7,50 @@ import { useAuth } from '@/lib/AuthContext';
 import { 
     Building2, ShieldCheck, MessageSquare, Landmark, 
     Smartphone, ArrowRight, Zap, Droplets, Check, 
-    Sparkles, Key, BarChart3, ChevronRight, HelpCircle, Star
+    Sparkles, Key, BarChart3, ChevronRight, HelpCircle, Star,
+    Download, Network
 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { submitDemoRequest } from '@/lib/api';
 
 export default function RootPage() {
     const router = useRouter();
     const { user, loading } = useAuth();
 
+    // Dynamic pricing state loaded from Firestore
+    const [prices, setPrices] = useState({
+        starter: 3200,
+        growth: 6500,
+        professional: 15000,
+        enterprise: 45000
+    });
+
+    useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                const settingsRef = doc(db, 'settings', 'app-settings');
+                const settingsSnap = await getDoc(settingsRef);
+                if (settingsSnap.exists() && settingsSnap.data().planPrices) {
+                    const savedPrices = settingsSnap.data().planPrices;
+                    setPrices({
+                        starter: savedPrices.starter !== undefined ? Number(savedPrices.starter) : 3200,
+                        growth: savedPrices.growth !== undefined ? Number(savedPrices.growth) : 6500,
+                        professional: savedPrices.professional !== undefined ? Number(savedPrices.professional) : 15000,
+                        enterprise: savedPrices.enterprise !== undefined ? Number(savedPrices.enterprise) : 45000,
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load dynamic pricing tiers:", err);
+            }
+        };
+        fetchPrices();
+    }, []);
+
     // Tab switchers
     const [activeTab, setActiveTab] = useState('ledgers'); // 'ledgers' | 'utilities' | 'agents'
+    const [integrationTab, setIntegrationTab] = useState('payments'); // 'payments' | 'bills'
+    const [expandedGuide, setExpandedGuide] = useState(null); // null | 'mpesa' | 'bank' | 'sms' | 'bills'
     const [calcTab, setCalcTab] = useState('electricity'); // 'electricity' | 'water'
     
     // Calculator States
@@ -27,6 +62,25 @@ export default function RootPage() {
     const [showDemoModal, setShowDemoModal] = useState(false);
     const [demoSubmitted, setDemoSubmitted] = useState(false);
     const [demoForm, setDemoForm] = useState({ name: '', email: '', phone: '', portfolioSize: '10-50' });
+
+    // Cycling words for hero section text animation
+    const words = ["The easiest", "The simplest", "The smartest", "The fastest", "The modern"];
+    const [wordIndex, setWordIndex] = useState(0);
+    const [animState, setAnimState] = useState('idle'); // 'idle' | 'exiting' | 'entering'
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setAnimState('exiting');
+            setTimeout(() => {
+                setWordIndex((prev) => (prev + 1) % words.length);
+                setAnimState('entering');
+                setTimeout(() => {
+                    setAnimState('idle');
+                }, 50); // Tiny pause to allow the browser to paint the new entry position
+            }, 400); // matches transition out duration
+        }, 3200);
+        return () => clearInterval(interval);
+    }, []);
 
     // Live calculations
     const getElectricityBill = () => {
@@ -62,14 +116,20 @@ export default function RootPage() {
         };
     };
 
-    const handleDemoSubmit = (e) => {
+    const handleDemoSubmit = async (e) => {
         e.preventDefault();
-        setDemoSubmitted(true);
-        setTimeout(() => {
-            setShowDemoModal(false);
-            setDemoSubmitted(false);
-            setDemoForm({ name: '', email: '', phone: '', portfolioSize: '10-50' });
-        }, 3500);
+        try {
+            await submitDemoRequest(demoForm);
+            setDemoSubmitted(true);
+            setTimeout(() => {
+                setShowDemoModal(false);
+                setDemoSubmitted(false);
+                setDemoForm({ name: '', email: '', phone: '', portfolioSize: '10-50' });
+            }, 3000);
+        } catch (err) {
+            console.error("Demo submission failed:", err);
+            alert("Failed to submit request: " + err.message);
+        }
     };
 
     if (loading) {
@@ -101,6 +161,7 @@ export default function RootPage() {
                     <a href="#features" className="hover:text-[#0F172A] transition-colors">How it Helps</a>
                     <a href="#playground" className="hover:text-[#0F172A] transition-colors">Bill Calculator</a>
                     <a href="#console" className="hover:text-[#0F172A] transition-colors">Preview</a>
+                    <a href="#integrations" className="hover:text-[#0F172A] transition-colors">Integrations</a>
                     <a href="#pricing" className="hover:text-[#0F172A] transition-colors">Pricing</a>
                 </nav>
 
@@ -134,7 +195,7 @@ export default function RootPage() {
                 style={{ backgroundImage: "url('/premium_photo.avif')" }}
             >
                 {/* Premium Dark Overlay with a subtle backdrop blur for luxury cinematic feel */}
-                <div className="absolute inset-0 bg-[#3C280D]/65 backdrop-blur-[3px] -z-10" />
+                <div className="absolute inset-0 bg-[#3C280D]/45 backdrop-blur-[1px] -z-10" />
                 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-400 rounded-full">
@@ -142,7 +203,18 @@ export default function RootPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider">Simple Bookkeeping · Easy Property Management</span>
                     </div>
                     <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
-                        The easiest way to manage your rental properties.
+                        <span 
+                            className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-blue-400 font-extrabold pr-1 ${
+                                animState === 'exiting' 
+                                    ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4' 
+                                    : animState === 'entering'
+                                        ? 'transition-none opacity-0 translate-y-4'
+                                        : 'transition-all duration-500 ease-out opacity-100 translate-y-0'
+                            }`}
+                        >
+                            {words[wordIndex]}
+                        </span>{' '}
+                        way to manage your rental properties.
                     </h1>
                     <p className="text-sm lg:text-base text-slate-300 leading-relaxed max-w-xl mx-auto">
                         Manage tenants. Easily calculate water and electricity bills, send automatic payment reminders to tenants, and keep track of your income and expenses in one simple place.
@@ -512,6 +584,226 @@ export default function RootPage() {
                 </div>
             </section>
 
+            {/* ── Integrations Section ── */}
+            <section id="integrations" className="py-20 px-6 lg:px-12 bg-white border-t border-[#E2E8F0]">
+                <div className="max-w-7xl mx-auto space-y-12">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="max-w-xl text-left space-y-3">
+                            <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Enterprise Connectivity</p>
+                            <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A]">Seamless System Integrations</h2>
+                            <p className="text-[#64748B] text-xs leading-relaxed">
+                                Automate your property business by linking KodiPay with mobile wallets, bank accounts, and field devices.
+                            </p>
+                        </div>
+                        <div className="flex bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0] self-start md:self-auto shrink-0">
+                            <button 
+                                onClick={() => { setIntegrationTab('payments'); setExpandedGuide(null); }}
+                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${integrationTab === 'payments' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+                            >Payments Automation</button>
+                            <button 
+                                onClick={() => { setIntegrationTab('bills'); setExpandedGuide(null); }}
+                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${integrationTab === 'bills' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+                            >Utility Bill Collection</button>
+                        </div>
+                    </div>
+
+                    {integrationTab === 'payments' ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Card 1: Bank API */}
+                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'bank' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'}`}>
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-[#007AFF] flex items-center justify-center mb-4">
+                                    <Landmark size={20} />
+                                </div>
+                                <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">Bank API Integrations</h3>
+                                <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                                    Link your commercial bank accounts directly with KodiPay to automatically track and match tenant bank transfers in real-time.
+                                </p>
+                                <button 
+                                    onClick={() => setExpandedGuide(expandedGuide === 'bank' ? null : 'bank')}
+                                    className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
+                                >
+                                    {expandedGuide === 'bank' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'bank' ? 'rotate-90' : ''}`} />
+                                </button>
+
+                                {expandedGuide === 'bank' && (
+                                    <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
+                                        <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
+                                        <div className="space-y-2 text-xs text-[#475569]">
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
+                                                <p>Contact your corporate banking representative (Equity, KCB, Co-op, etc.) to request API/Webhook integration.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
+                                                <p>KodiPay will generate a unique Bank Webhook URL (e.g., <code className="bg-[#F8FAFC] px-1 py-0.5 border rounded font-mono text-[10px] text-[#007AFF]">https://api.kodipay.com/v1/webhooks/bank</code>).</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
+                                                <p>Provide this Webhook URL to your bank so they can configure transaction push alerts to KodiPay.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
+                                                <p>Save your bank API keys in the KodiPay dashboard to enable secure decryption and instant matching.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Card 2: M-Pesa API */}
+                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'mpesa' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'}`}>
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                                    <Network size={20} />
+                                </div>
+                                <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">M-Pesa API Integration</h3>
+                                <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                                    Connect your M-Pesa C2B Paybill or Till number directly via Safaricom Daraja API for fully automated reconciliation.
+                                </p>
+                                <button 
+                                    onClick={() => setExpandedGuide(expandedGuide === 'mpesa' ? null : 'mpesa')}
+                                    className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
+                                >
+                                    {expandedGuide === 'mpesa' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'mpesa' ? 'rotate-90' : ''}`} />
+                                </button>
+
+                                {expandedGuide === 'mpesa' && (
+                                    <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
+                                        <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
+                                        <div className="space-y-2 text-xs text-[#475569]">
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
+                                                <p>Register or log in on the official <strong>Safaricom Daraja Developer Portal</strong>.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
+                                                <p>Create a new App on Daraja to get your <strong>Consumer Key</strong>, <strong>Consumer Secret</strong>, and <strong>Passkey</strong>.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
+                                                <p>Enter these details in KodiPay under <strong>Settings → Integrations → M-Pesa</strong>.</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
+                                                <p>Click "Initialize Webhook" inside KodiPay. Payments are now tracked and credited automatically!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Card 3: SMS Forwarder */}
+                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'sms' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'} flex flex-col justify-between`}>
+                                <div>
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center mb-4">
+                                        <Smartphone size={20} />
+                                    </div>
+                                    <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">Automatic M-Pesa SMS Forwarding</h3>
+                                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                                        Using personal Till numbers or standard SIM lines? Our Android SMS Forwarder app forwards transaction SMS to KodiPay servers.
+                                    </p>
+                                    <button 
+                                        onClick={() => setExpandedGuide(expandedGuide === 'sms' ? null : 'sms')}
+                                        className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
+                                    >
+                                        {expandedGuide === 'sms' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'sms' ? 'rotate-90' : ''}`} />
+                                    </button>
+
+                                    {expandedGuide === 'sms' && (
+                                        <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
+                                            <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
+                                            <div className="space-y-2 text-xs text-[#475569]">
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
+                                                    <p>Download and install our APK on the Android phone that receives the payment SMS notifications.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
+                                                    <p>Open the app and log in securely using the <strong>One-Time Password (OTP)</strong> sent to your registered number.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
+                                                    <p>Grant the necessary SMS read permissions to allow automated packet forwarding.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
+                                                    <p>Keep the app active in the background. Payments will post on your ledger inside 3 seconds!</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-[#F1F5F9]">
+                                    <a 
+                                        href="/downloads/sms-forwarder.apk" 
+                                        download
+                                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm focus:outline-none"
+                                    >
+                                        <Download size={14} /> Download Forwarder App
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="max-w-2xl mx-auto bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm text-left flex flex-col md:flex-row gap-8 items-start">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 text-[#007AFF] flex items-center justify-center shrink-0">
+                                <Building2 size={24} />
+                            </div>
+                            <div className="space-y-4 flex-1">
+                                <div>
+                                    <h3 className="font-extrabold text-base text-[#0F172A] tracking-tight">KodiPay Utility Bills Collection App</h3>
+                                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                                        Empower your field agents with our offline-first utility billing app. Record water and electricity meter readings on the spot, compute bills instantly based on tiered schedules, and sync when online.
+                                    </p>
+                                </div>
+
+                                <div className="pt-2">
+                                    <button 
+                                        onClick={() => setExpandedGuide(expandedGuide === 'bills' ? null : 'bills')}
+                                        className="text-[#007AFF] text-xs font-bold hover:underline flex items-center gap-1 focus:outline-none"
+                                    >
+                                        {expandedGuide === 'bills' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'bills' ? 'rotate-90' : ''}`} />
+                                    </button>
+
+                                    {expandedGuide === 'bills' && (
+                                        <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
+                                            <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
+                                            <div className="space-y-2 text-xs text-[#475569]">
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
+                                                    <p>Download and install the **KodiPay Bills App** onto your team's Android field devices.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
+                                                    <p>Log in using your registered Landlord or Agent dashboard credentials.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
+                                                    <p>Walk around the property, select a unit, and type the current meter reading. The app automatically calculates rates offline.</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
+                                                    <p>Click "Submit & Sync" to upload the bills to the server and instantly send SMS invoices to your tenants.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-4">
+                                    <a 
+                                        href="/downloads/kodipay-bills.apk" 
+                                        download
+                                        className="inline-flex h-11 px-6 bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-bold rounded-lg items-center gap-2 transition-colors shadow-sm focus:outline-none"
+                                    >
+                                        <Download size={14} /> Download Utility Bills App
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
             {/* ── Transparent Pricing Section ── */}
             <section id="pricing" className="py-20 px-6 lg:px-12 bg-white border-t border-[#E2E8F0]">
                 <div className="max-w-7xl mx-auto space-y-16">
@@ -529,7 +821,7 @@ export default function RootPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-bold text-xs text-[#64748B] uppercase tracking-widest">Starter Plan</h3>
-                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES 3,200<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
+                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES {prices.starter.toLocaleString()}<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
                                     <p className="text-[10px] text-[#64748B] mt-1">Essential tools for small to mid portfolios</p>
                                 </div>
                                 <div className="border-t border-[#F1F5F9] pt-4 space-y-3 text-xs text-left">
@@ -554,7 +846,7 @@ export default function RootPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-bold text-xs text-[#007AFF] uppercase tracking-widest">Growth Plan</h3>
-                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES 6,500<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
+                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES {prices.growth.toLocaleString()}<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
                                     <p className="text-[10px] text-[#64748B] mt-1">Great for growing property managers</p>
                                 </div>
                                 <div className="border-t border-[#F1F5F9] pt-4 space-y-3 text-xs text-left">
@@ -577,7 +869,7 @@ export default function RootPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-bold text-xs text-[#64748B] uppercase tracking-widest">Professional Plan</h3>
-                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES 15,000<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
+                                    <p className="text-3xl font-extrabold tracking-tight text-[#0F172A] mt-2">KES {prices.professional.toLocaleString()}<span className="text-xs font-semibold text-[#64748B]"> / month</span></p>
                                     <p className="text-[10px] text-[#64748B] mt-1">For large property management businesses</p>
                                 </div>
                                 <div className="border-t border-[#F1F5F9] pt-4 space-y-3 text-xs text-left">

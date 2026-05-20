@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
       if (docSnap.exists()) {
         const profile = docSnap.data();
         let agencyStatus = 'active';
+        let subscription = { activePlan: 'starter_trial', status: 'trial', propertiesLimit: 2 };
         
         if (profile.agencyId) {
           const settingsSnap = await getDoc(doc(db, 'settings', profile.agencyId));
@@ -26,6 +27,11 @@ export const AuthProvider = ({ children }) => {
             if (settings.accountStatus === 'Suspended') {
               agencyStatus = 'suspended';
             }
+          }
+
+          const agencySnap = await getDoc(doc(db, 'agencies', profile.agencyId));
+          if (agencySnap.exists()) {
+            subscription = agencySnap.data().subscription || subscription;
           }
         }
 
@@ -36,7 +42,8 @@ export const AuthProvider = ({ children }) => {
           assignedProperties: profile.assignedProperties || [],
           name: profile.name || baseData.displayName,
           status: profile.status || 'active',
-          agencyStatus
+          agencyStatus,
+          subscription
         };
       }
     } catch (error) {
@@ -82,6 +89,29 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  const refreshUser = async () => {
+    if (auth.currentUser) {
+      const baseUser = {
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        displayName: auth.currentUser.displayName,
+        authType: 'firebase'
+      };
+      const fullUser = await fetchUserProfile(auth.currentUser.uid, baseUser);
+      setUser(fullUser);
+    } else {
+      const savedUser = localStorage.getItem('kp_user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        const fullUser = await fetchUserProfile(parsedUser.uid, {
+          ...parsedUser,
+          authType: 'custom'
+        });
+        setUser(fullUser);
+      }
+    }
+  };
+
   const login = (token, userData) => {
     localStorage.setItem('kp_token', token);
     localStorage.setItem('kp_user', JSON.stringify(userData));
@@ -96,7 +126,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, isAdmin: user?.role === 'admin' }}>
       {!loading && children}
     </AuthContext.Provider>
   );

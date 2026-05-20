@@ -291,7 +291,7 @@ export default function TenantDetailPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-[13px] text-[#64748B]">
-                                            {p.date ? formatDate(p.date) : '—'}
+                                            {p.createdAt ? formatDate(p.createdAt) : p.date ? formatDate(p.date) : '—'}
                                         </td>
                                         <td className="px-6 py-4 text-[13px] font-bold text-[#16A34A] text-right">
                                             {formatCurrency(p.amount)}

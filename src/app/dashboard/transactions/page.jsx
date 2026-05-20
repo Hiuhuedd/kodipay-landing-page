@@ -175,7 +175,8 @@ export default function TransactionsPage() {
                                     <table className="w-full text-left">
                                         <thead>
                                             <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                                                <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">Date & Reference</th>
+                                                <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">Date</th>
+                                                <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">Reference</th>
                                                 <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">Tenant & Unit</th>
                                                 <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0] text-right">Amount</th>
                                                 <th className="px-6 py-3.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-b border-[#E2E8F0]">Method</th>
@@ -188,9 +189,13 @@ export default function TransactionsPage() {
                                                 const IconComponent = config.icon;
                                                 return (
                                                     <tr key={i} className="hover:bg-[#F8FAFC] transition-colors">
+                                                        <td className="px-6 py-4 text-[13px] font-semibold text-[#0F172A]">
+                                                            {formatDate(tx.paymentDate || tx.date || tx.timestamp)}
+                                                        </td>
                                                         <td className="px-6 py-4">
-                                                            <p className="text-[13px] font-semibold text-[#0F172A]">{formatDate(tx.paymentDate || tx.date || tx.timestamp)}</p>
-                                                            <p className="text-[10px] font-mono text-[#94A3B8] uppercase tracking-wider mt-0.5">{tx.transactionCode || tx.paymentId || tx.transactionId || '—'}</p>
+                                                            <span className="font-mono text-xs text-[#0F172A] bg-[#F8FAFC] border border-[#E2E8F0] px-2 py-0.5 rounded">
+                                                                {tx.transactionCode || tx.paymentId || tx.transactionId || '—'}
+                                                            </span>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <p className="text-[13px] font-bold text-[#0F172A]">{tx.tenantName}</p>
