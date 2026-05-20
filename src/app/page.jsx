@@ -182,7 +182,7 @@ export default function RootPage() {
                                 href="/signup"
                                 className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
                             >
-                                Get Started
+                                Get Started Free
                             </Link>
                         </>
                     )}
@@ -225,7 +225,7 @@ export default function RootPage() {
                             className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2 shadow-md shadow-blue-100 transform hover:-translate-y-0.5 cursor-pointer"
                             id="btn-hero-signup"
                         >
-                            Get Started Now <ArrowRight size={14} />
+                            Get Started Free <ArrowRight size={14} />
                         </Link>
                         <button 
                             onClick={() => setShowDemoModal(true)}
@@ -834,7 +834,7 @@ export default function RootPage() {
                                 </div>
                             </div>
                             <Link href="/signup" className="mt-8 w-full h-10 border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-bold rounded-md flex items-center justify-center transition-colors">
-                                Get Started Now
+                                Get Started Free
                             </Link>
                         </div>
 
