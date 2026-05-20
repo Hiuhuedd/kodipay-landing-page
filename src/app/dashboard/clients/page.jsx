@@ -33,7 +33,8 @@ import {
     Calendar,
     ArrowUpRight,
     CheckCircle2,
-    Briefcase
+    Briefcase,
+    Loader2
 } from 'lucide-react';
 
 export default function ClientManagementPage() {
