@@ -29,7 +29,14 @@ export async function fetchAPI(endpoint, options = {}) {
                     if (typeof errData.error === 'string') {
                         errMsg = errData.error;
                     } else if (typeof errData.error === 'object') {
-                        errMsg = errData.error.message || errData.error.code || errMsg;
+                        const m = errData.error.message;
+                        if (typeof m === 'string') {
+                            errMsg = m;
+                        } else if (m && typeof m === 'object') {
+                            errMsg = m.errorMessage || m.message || JSON.stringify(m);
+                        } else {
+                            errMsg = errData.error.code || errMsg;
+                        }
                     }
                 }
             } catch (_) {}
@@ -71,6 +78,8 @@ export const getTenants = () => fetchAPI('/tenants');
 export const getTenantById = (id) => fetchAPI(`/tenants/${id}`);
 export const createTenant = (data) =>
     fetchAPI('/tenants', { method: 'POST', body: JSON.stringify(data) });
+export const updateTenant = (id, data) =>
+    fetchAPI(`/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteTenant = (id) =>
     fetchAPI(`/tenants/${id}`, { method: 'DELETE' });
 export const getPaymentStatus = (id) =>
@@ -148,6 +157,8 @@ export const getWaterBillHistory = (propertyId) =>
 export const getSettings = () => fetchAPI('/settings');
 export const updateSettings = (data) =>
     fetchAPI('/settings', { method: 'PUT', body: JSON.stringify(data) });
+export const registerMpesaWebhooks = () =>
+    fetchAPI('/settings/register-mpesa', { method: 'POST' });
 
 // ── Admin & Subagents ────────────────────────────────────────────────────
 export const getSubagents = () => fetchAPI('/admin/subagents');
@@ -166,6 +177,8 @@ export const purchaseSmsPlan = (planId, units) =>
     fetchAPI('/billing/purchase-plan', { method: 'POST', body: JSON.stringify({ planId, units }) });
 export const initiateMpesaStk = (data) =>
     fetchAPI('/billing/mpesa-stk', { method: 'POST', body: JSON.stringify(data) });
+export const pollStkStatus = (checkoutRequestId) =>
+    fetchAPI(`/billing/stk-status/${encodeURIComponent(checkoutRequestId)}`);
 
 // ── Auth ─────────────────────────────────────────────────────────────────
 export const sendVerification = (email, phone) =>
@@ -184,7 +197,7 @@ export const updateUserProfile = (data) =>
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 export function formatCurrency(amount) {
-    return `KES ${Number(amount || 0).toLocaleString('en-KE')}`;
+    return `KES ${Math.round(Number(amount || 0)).toLocaleString('en-KE')}`;
 }
 
 export function getCurrentMonth() {

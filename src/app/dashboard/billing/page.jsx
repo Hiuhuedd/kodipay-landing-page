@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSmsUsage, purchaseSmsPlan, initiateMpesaStk, formatCurrency } from '@/lib/api';
+import { getSmsUsage, purchaseSmsPlan, initiateMpesaStk, pollStkStatus, formatCurrency } from '@/lib/api';
 import { PageHeader, LoadingPage, Modal, Tooltip } from '@/components/ui';
 import { 
     MessageSquare, Zap, ShieldCheck, CreditCard, Check, ArrowRight, 
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function BillingPage() {
@@ -19,7 +19,10 @@ export default function BillingPage() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
-    const [success, setSuccess] = useState(false);
+    // paymentState: 'idle' | 'waiting' | 'success' | 'failed' | 'cancelled' | 'timeout'
+    const [paymentState, setPaymentState] = useState('idle');
+    const [paymentError, setPaymentError] = useState('');
+    const [receiptData, setReceiptData] = useState(null);
     const [mpesaPhone, setMpesaPhone] = useState('');
 
     // Dynamic pricing state loaded from Firestore
@@ -141,14 +144,14 @@ export default function BillingPage() {
 
     const handleConfirm = async () => {
         if (!selectedPlan) return;
-        
-        // M-Pesa Phone Validation
+
         if (!mpesaPhone || mpesaPhone.trim().length < 10) {
             alert('Please enter a valid Safaricom phone number (e.g., 0712345678)');
             return;
         }
 
         setSubmitting(true);
+        setPaymentError('');
         try {
             let amountNum = 0;
             if (selectedPlan.type === 'sms') {
@@ -169,58 +172,71 @@ export default function BillingPage() {
                 throw new Error(res.error || 'Payment request rejected');
             }
 
-            // Perform instant database upgrade for demo sandbox feedback
-            if (user?.agencyId) {
-                const agencyRef = doc(db, 'agencies', user.agencyId);
-                
-                if (selectedPlan.type === 'subscription') {
-                    const propsLimit = selectedPlan.id === 'starter' ? 75 : selectedPlan.id === 'growth' ? 150 : 500;
-                    const smsLimit = selectedPlan.id === 'starter' ? 1500 : selectedPlan.id === 'growth' ? 5000 : 15000;
-                    
-                    await updateDoc(agencyRef, {
-                        'subscription.activePlan': selectedPlan.id,
-                        'subscription.status': 'active',
-                        'subscription.propertiesLimit': propsLimit,
-                        'subscription.smsLimit': smsLimit,
-                        'subscription.startedAt': new Date().toISOString(),
-                        'subscription.nextPaymentAt': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        'smsStats.monthlyLimit': smsLimit
-                    });
-                } else if (selectedPlan.type === 'sms') {
-                    const currentLimit = usage?.monthlyLimit || 2000;
-                    const newLimit = currentLimit + (selectedPlan.units || 0);
-                    
-                    await updateDoc(agencyRef, {
-                        'subscription.smsLimit': newLimit,
-                        'smsStats.monthlyLimit': newLimit
-                    });
-                }
-
-                // Force AuthContext to refresh local profile fields (including header status badges)
-                if (refreshUser) {
-                    await refreshUser();
-                }
+            const checkoutRequestId = res.data?.checkoutRequestId;
+            if (!checkoutRequestId) {
+                throw new Error('No checkout ID received from server.');
             }
 
-            alert(res.message || 'M-Pesa STK Push initiated successfully! Please check your phone for the PIN prompt.');
-            setSuccess(true);
-            const updated = await getSmsUsage();
-            setUsage(updated?.data || updated);
-            
-            // Trigger dynamic SMS counter refresh on the header
-            window.dispatchEvent(new Event('kp_sms_updated'));
-            
-            setTimeout(() => {
-                setSuccess(false);
-                setSelectedPlan(null);
-                setMpesaPhone('');
-            }, 8000);
+            // Transition to "waiting for PIN" state — do NOT upgrade DB yet
+            setPaymentState('waiting');
+            setSubmitting(false);
+
+            // Poll for confirmation every 3 seconds, up to 90 seconds
+            const POLL_INTERVAL_MS = 3000;
+            const MAX_POLLS = 30; // 30 × 3s = 90 seconds
+            let polls = 0;
+
+            const pollTimer = setInterval(async () => {
+                polls++;
+                try {
+                    const statusRes = await pollStkStatus(checkoutRequestId);
+                    const { status, mpesaReceiptNumber, paidAmount, resultDesc } = statusRes?.data || {};
+
+                    if (status === 'completed') {
+                        clearInterval(pollTimer);
+                        setReceiptData({ mpesaReceiptNumber, paidAmount });
+                        // Refresh user session so limits update across the app
+                        if (refreshUser) await refreshUser();
+                        const updated = await getSmsUsage();
+                        setUsage(updated?.data || updated);
+                        window.dispatchEvent(new Event('kp_sms_updated'));
+                        setPaymentState('success');
+                    } else if (status === 'failed') {
+                        clearInterval(pollTimer);
+                        setPaymentError(resultDesc || 'Payment was declined or cancelled. Please try again.');
+                        setPaymentState('failed');
+                    } else if (polls >= MAX_POLLS) {
+                        clearInterval(pollTimer);
+                        setPaymentError('Payment confirmation timed out. If you paid, your account will be updated within a few minutes.');
+                        setPaymentState('timeout');
+                    }
+                    // else: still pending — keep polling
+                } catch (pollErr) {
+                    console.warn('Poll error:', pollErr.message);
+                    // Non-fatal: keep polling until max
+                    if (polls >= MAX_POLLS) {
+                        clearInterval(pollTimer);
+                        setPaymentError('Could not confirm payment status. Please check your account in a few minutes.');
+                        setPaymentState('timeout');
+                    }
+                }
+            }, POLL_INTERVAL_MS);
+
         } catch (e) {
             console.error(e);
-            alert(e.message || 'M-Pesa transaction failed. Please try again.');
-        } finally {
+            setPaymentError(e.message || 'M-Pesa transaction failed. Please try again.');
+            setPaymentState('failed');
             setSubmitting(false);
         }
+    };
+
+    const handleModalClose = () => {
+        if (submitting || paymentState === 'waiting') return; // Lock while pending
+        setSelectedPlan(null);
+        setPaymentState('idle');
+        setPaymentError('');
+        setReceiptData(null);
+        setMpesaPhone('');
     };
 
     if (loading) return <LoadingPage />;
@@ -444,37 +460,73 @@ export default function BillingPage() {
 
             {/* Confirmation Modal */}
             {selectedPlan && (
-                <Modal 
-                    title={success ? "Success!" : (selectedPlan.type === 'sms' ? "Confirm Bundle Purchase" : "Plan Subscription")} 
-                    onClose={() => !submitting && setSelectedPlan(null)}
+                <Modal
+                    title={
+                        paymentState === 'waiting' ? 'Waiting for Payment...' :
+                        paymentState === 'success' ? 'Payment Confirmed! 🎉' :
+                        (paymentState === 'failed' || paymentState === 'timeout') ? 'Payment Failed' :
+                        (selectedPlan.type === 'sms' ? 'Confirm Bundle Purchase' : 'Plan Subscription')
+                    }
+                    onClose={handleModalClose}
                     maxWidth="max-w-md"
                 >
                     <div className="py-2">
-                        {success ? (
+
+                        {/* ── WAITING FOR M-PESA PIN ── */}
+                        {paymentState === 'waiting' && (
+                            <div className="text-center py-10 flex flex-col items-center gap-5 animate-in fade-in duration-500">
+                                <div className="relative w-20 h-20">
+                                    <div className="absolute inset-0 rounded-full border-4 border-sky-100 animate-ping opacity-40" />
+                                    <div className="absolute inset-0 rounded-full border-4 border-t-sky-500 border-sky-100 animate-spin" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Phone size={28} className="text-sky-500" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900">Check your phone</h3>
+                                    <p className="text-xs font-semibold text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                                        An M-Pesa STK Push has been sent to <span className="font-bold text-slate-800">{mpesaPhone}</span>. Enter your PIN to confirm payment.
+                                    </p>
+                                </div>
+                                <div className="w-full bg-amber-50 border border-amber-200 rounded-xl p-4 text-left">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                            <span className="text-white text-[9px] font-black">!</span>
+                                        </div>
+                                        <p className="text-[11px] font-semibold text-amber-800 leading-relaxed">
+                                            <span className="font-black block mb-1">Do not close this window.</span>
+                                            Your plan will only be activated after payment is confirmed by Safaricom. If you cancel on M-Pesa, your plan will <strong>not</strong> change.
+                                        </p>
+                                    </div>
+                                </div>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Waiting for confirmation...</p>
+                            </div>
+                        )}
+
+                        {/* ── PAYMENT SUCCESS ── */}
+                        {paymentState === 'success' && (
                             <div className="text-center py-8 animate-in zoom-in duration-500 flex flex-col items-center">
-                                {/* Celebratory Pulsing Badge */}
                                 <div className="relative mb-6">
                                     <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-25" />
                                     <div className="relative w-20 h-20 bg-gradient-to-tr from-emerald-400 to-teal-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-100">
                                         <Check size={40} strokeWidth={3} className="animate-bounce" />
                                     </div>
                                 </div>
-
                                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase tracking-wider mb-3">
-                                    🎉 UPGRADE SUCCESSFUL
+                                    🎉 PAYMENT CONFIRMED
                                 </div>
-
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                                    Congratulations!
-                                </h3>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Congratulations!</h3>
                                 <p className="text-xs font-semibold text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
-                                    Your account has been upgraded to the <span className="text-slate-900 font-bold uppercase">{selectedPlan.name}</span>. Your workspace features and billing quotas are now fully unlocked!
+                                    Your account has been upgraded to the <span className="text-slate-900 font-bold uppercase">{selectedPlan.name}</span>. Your workspace features and quotas are now fully unlocked!
                                 </p>
-
-                                {/* Premium Plan Limits Details */}
+                                {receiptData?.mpesaReceiptNumber && (
+                                    <div className="mt-4 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-mono text-slate-600">
+                                        Receipt: <span className="font-bold text-slate-900">{receiptData.mpesaReceiptNumber}</span>
+                                    </div>
+                                )}
                                 <div className="w-full bg-[#F8FAFC] border border-slate-100 rounded-2xl p-5 mt-6 space-y-3.5 text-left text-xs font-bold text-slate-700 shadow-inner">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Active Workspace Plan</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Active Plan</span>
                                         <span className="text-slate-900 uppercase font-black">{selectedPlan.name}</span>
                                     </div>
                                     <div className="h-px bg-slate-200" />
@@ -486,27 +538,54 @@ export default function BillingPage() {
                                     </div>
                                     <div className="h-px bg-slate-200" />
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Total Monthly SMS Quota</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Monthly SMS Quota</span>
                                         <span className="text-emerald-600 font-black">
-                                            {selectedPlan.type === 'sms' 
-                                                ? `${((usage?.monthlyLimit || 2000) + (selectedPlan.units || 0)).toLocaleString()} Units` 
+                                            {selectedPlan.type === 'sms'
+                                                ? `${((usage?.monthlyLimit || 2000) + (selectedPlan.units || 0)).toLocaleString()} Units`
                                                 : (selectedPlan.id === 'starter' ? '1,500 Units' : selectedPlan.id === 'growth' ? '5,000 Units' : '15,000 Units')}
                                         </span>
                                     </div>
                                 </div>
-
                                 <button
-                                    onClick={() => {
-                                        setSuccess(false);
-                                        setSelectedPlan(null);
-                                        setMpesaPhone('');
-                                    }}
+                                    onClick={handleModalClose}
                                     className="w-full mt-6 py-4 bg-slate-950 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-md shadow-slate-200"
                                 >
                                     Dismiss & Continue
                                 </button>
                             </div>
-                        ) : (
+                        )}
+
+                        {/* ── FAILED / TIMEOUT ── */}
+                        {(paymentState === 'failed' || paymentState === 'timeout') && (
+                            <div className="text-center py-8 flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                                <div className="w-16 h-16 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center text-2xl">✕</div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        {paymentState === 'timeout' ? 'Confirmation Timed Out' : 'Payment Not Completed'}
+                                    </h3>
+                                    <p className="text-xs font-semibold text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                                        {paymentError}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-2 w-full">
+                                    <button
+                                        onClick={() => { setPaymentState('idle'); setPaymentError(''); }}
+                                        className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all"
+                                    >
+                                        Try Again
+                                    </button>
+                                    <button
+                                        onClick={handleModalClose}
+                                        className="w-full py-3.5 bg-slate-50 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── IDLE: PAYMENT FORM ── */}
+                        {paymentState === 'idle' && (
                             <>
                                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-6">
                                     <div className="flex justify-between items-center mb-4">
@@ -532,8 +611,8 @@ export default function BillingPage() {
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">M-PESA Phone Number</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">+254</span>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={mpesaPhone}
                                             onChange={(e) => setMpesaPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                                             placeholder="07XXXXXXXX"
@@ -541,11 +620,11 @@ export default function BillingPage() {
                                             className="w-full pl-14 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm focus:bg-white focus:ring-2 focus:ring-sky-100 focus:border-sky-500 transition-all outline-none"
                                         />
                                     </div>
-                                    <p className="text-[9px] font-bold text-slate-400">Enter your Safaricom M-Pesa number to receive the payment STK push pin prompt.</p>
+                                    <p className="text-[9px] font-bold text-slate-400">Enter your Safaricom M-Pesa number. A PIN prompt will appear on your phone.</p>
                                 </div>
 
                                 <div className="flex flex-col gap-3">
-                                    <button 
+                                    <button
                                         onClick={handleConfirm}
                                         disabled={submitting}
                                         className="w-full py-4 bg-slate-950 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50"
@@ -553,14 +632,11 @@ export default function BillingPage() {
                                         {submitting ? (
                                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white" />
                                         ) : (
-                                            <>
-                                                <CreditCard size={16} />
-                                                Pay with M-Pesa
-                                            </>
+                                            <><CreditCard size={16} /> Pay with M-Pesa</>
                                         )}
                                     </button>
-                                    <button 
-                                        onClick={() => setSelectedPlan(null)}
+                                    <button
+                                        onClick={handleModalClose}
                                         disabled={submitting}
                                         className="w-full py-4 bg-slate-50 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 hover:text-slate-600 transition-all"
                                     >

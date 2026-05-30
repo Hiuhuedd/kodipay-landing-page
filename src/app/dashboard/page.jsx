@@ -79,20 +79,20 @@ export default function DashboardPage() {
             };
 
             const [statsData, reportData, smsData] = await Promise.all([
-                getStats(m, propertyIds).catch(err => { 
-                    console.error('[DASHBOARD] Stats failed:', err); 
+                getStats(m, propertyIds).catch(err => {
+                    console.error('[DASHBOARD] Stats failed:', err);
                     handleAuthFailure(err);
-                    return null; 
+                    return null;
                 }),
-                getMonthlyReport(m, propertyIds).catch(err => { 
-                    console.error('[DASHBOARD] Report failed:', err); 
+                getMonthlyReport(m, propertyIds).catch(err => {
+                    console.error('[DASHBOARD] Report failed:', err);
                     handleAuthFailure(err);
-                    return null; 
+                    return null;
                 }),
-                getSmsUsage().catch(err => { 
-                    console.error('[DASHBOARD] SMS Usage failed:', err); 
+                getSmsUsage().catch(err => {
+                    console.error('[DASHBOARD] SMS Usage failed:', err);
                     handleAuthFailure(err);
-                    return null; 
+                    return null;
                 }),
             ]);
 
@@ -174,108 +174,110 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8 animate-fade-in">
             {/* ── Page Header & Controls ── */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left: Title + Tab Toggle */}
-            <div className="flex items-center gap-4">
-                <div>
-                    <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#0F172A]">{displayMonth}</h2>
-                    <p className="text-[10px] text-[#94A3B8] mt-0.5 uppercase tracking-widest">Performance Overview</p>
-                </div>
-                {/* Income/Expenses Toggle Pill */}
-                <div className="flex items-center bg-[#F1F5F9] rounded-lg p-1">
-                    <button
-                        onClick={() => setActiveTab('income')}
-                        className={`h-7 px-4 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${activeTab === 'income' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                    >Income</button>
-                    <button
-                        onClick={() => setActiveTab('expenses')}
-                        className={`h-7 px-4 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${activeTab === 'expenses' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                    >Expenses</button>
-                </div>
-            </div>
-
-            {/* Right: Month + Subagent + CTA */}
-            <div className="flex items-center gap-2">
-                {/* Month Selector */}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowMonthPicker(v => !v)}
-                        className="h-8 px-3 flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-md text-[12px] font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
-                    >
-                        <Calendar size={13} />
-                        Select Month
-                        <ChevronDown size={12} className={`transition-transform ${showMonthPicker ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showMonthPicker && (
-                        <>
-                            <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)} />
-                            <div className="absolute top-full right-0 mt-2 z-50 w-72 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden p-4 animate-zoom-in">
-                                <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9] mb-3">
-                                    <button onClick={() => setPickerYear(y => y - 1)} className="p-1 hover:bg-[#F1F5F9] rounded-md transition-colors text-[#64748B] hover:text-[#0F172A]"><ChevronLeft size={16} /></button>
-                                    <span className="text-[13px] font-bold text-[#0F172A]">{pickerYear}</span>
-                                    <button onClick={() => setPickerYear(y => y + 1)} className="p-1 hover:bg-[#F1F5F9] rounded-md transition-colors text-[#64748B] hover:text-[#0F172A]"><ChevronRight size={16} /></button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-1.5">
-                                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((mName, index) => {
-                                        const mVal = String(index + 1).padStart(2, '0');
-                                        const targetVal = `${pickerYear}-${mVal}`;
-                                        const isSelected = targetVal === month;
-                                        return (
-                                            <button key={targetVal} onClick={() => { setMonth(targetVal); setShowMonthPicker(false); }}
-                                                className={`py-2 rounded-md text-[12px] font-medium transition-all ${isSelected ? 'bg-[#007AFF] text-white' : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'}`}
-                                            >{mName}</button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </>
-                    )}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                {/* Left: Title + Tab Toggle */}
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#0F172A]">{displayMonth}</h2>
+                        <p className="text-[10px] text-[#94A3B8] mt-0.5 uppercase tracking-widest">Performance Overview</p>
+                    </div>
+                    {/* Income/Expenses Toggle Pill */}
+                    <div className="flex items-center bg-[#F1F5F9] rounded-lg p-1">
+                        <button
+                            onClick={() => setActiveTab('income')}
+                            className={`h-7 px-4 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${activeTab === 'income' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+                        >Income</button>
+                        <button
+                            onClick={() => setActiveTab('expenses')}
+                            className={`h-7 px-4 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${activeTab === 'expenses' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
+                        >Expenses</button>
+                    </div>
                 </div>
 
-                {/* Subagent Selector (Admin only) */}
-                {isAdmin && (
+                {/* Right: Month + Subagent + CTA */}
+                <div className="flex items-center gap-2">
+                    {/* Month Selector */}
                     <div className="relative">
                         <button
-                            onClick={() => setShowSubagentSelect(v => !v)}
+                            onClick={() => setShowMonthPicker(v => !v)}
                             className="h-8 px-3 flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-md text-[12px] font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
                         >
-                            <Users size={13} />
-                            <span>{selectedSubagent ? selectedSubagent.name : 'All Agents'}</span>
-                            <ChevronDown size={12} className={`transition-transform ${showSubagentSelect ? 'rotate-180' : ''}`} />
+                            <Calendar size={13} />
+                            Select Month
+                            <ChevronDown size={12} className={`transition-transform ${showMonthPicker ? 'rotate-180' : ''}`} />
                         </button>
-                        {showSubagentSelect && (
+                        {showMonthPicker && (
                             <>
-                                <div className="fixed inset-0 z-40" onClick={() => setShowSubagentSelect(false)} />
-                                <div className="absolute top-full right-0 mt-2 z-50 w-56 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden py-1 animate-zoom-in">
-                                    <button
-                                        onClick={() => { setSelectedSubagent(null); setShowSubagentSelect(false); }}
-                                        className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors ${!selectedSubagent ? 'bg-[#F0F6FF] text-[#007AFF] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
-                                    >All Agents (Global Stats)</button>
-                                    <div className="border-t border-slate-100 my-1" />
-                                    <div className="overflow-y-auto max-h-56">
-                                        {subagents.length === 0 ? (
-                                            <div className="px-4 py-3 text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider text-center">No subagents found</div>
-                                        ) : (
-                                            subagents.map(agent => (
-                                                <button
-                                                    key={agent.uid}
-                                                    onClick={() => { setSelectedSubagent(agent); setShowSubagentSelect(false); }}
-                                                    className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors ${selectedSubagent?.uid === agent.uid ? 'bg-[#F0F6FF] text-[#007AFF] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
-                                                >{agent.name}</button>
-                                            ))
-                                        )}
+                                <div className="fixed inset-0 z-40" onClick={() => setShowMonthPicker(false)} />
+                                <div className="absolute top-full right-0 mt-2 z-50 w-72 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden p-4 animate-zoom-in">
+                                    <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9] mb-3">
+                                        <button onClick={() => setPickerYear(y => y - 1)} className="p-1 hover:bg-[#F1F5F9] rounded-md transition-colors text-[#64748B] hover:text-[#0F172A]"><ChevronLeft size={16} /></button>
+                                        <span className="text-[13px] font-bold text-[#0F172A]">{pickerYear}</span>
+                                        <button onClick={() => setPickerYear(y => y + 1)} className="p-1 hover:bg-[#F1F5F9] rounded-md transition-colors text-[#64748B] hover:text-[#0F172A]"><ChevronRight size={16} /></button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((mName, index) => {
+                                            const mVal = String(index + 1).padStart(2, '0');
+                                            const targetVal = `${pickerYear}-${mVal}`;
+                                            const isSelected = targetVal === month;
+                                            return (
+                                                <button key={targetVal} onClick={() => { setMonth(targetVal); setShowMonthPicker(false); }}
+                                                    className={`py-2 rounded-md text-[12px] font-medium transition-all ${isSelected ? 'bg-[#007AFF] text-white' : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'}`}
+                                                >{mName}</button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </>
                         )}
                     </div>
-                )}
 
-                <Link href="/dashboard/record-payment" className="bg-[#007AFF] text-white text-[12px] font-medium h-8 px-3 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1.5">
-                    <Plus size={13} /> Record Payment
-                </Link>
+                    {/* Subagent Selector (Admin only) */}
+                    {isAdmin && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowSubagentSelect(v => !v)}
+                                className="h-8 px-3 flex items-center gap-1.5 bg-white border border-[#E2E8F0] rounded-md text-[12px] font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+                            >
+                                <Users size={13} />
+                                <span>{selectedSubagent ? selectedSubagent.name : 'All Agents'}</span>
+                                <ChevronDown size={12} className={`transition-transform ${showSubagentSelect ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showSubagentSelect && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowSubagentSelect(false)} />
+                                    <div className="absolute top-full right-0 mt-2 z-50 w-56 bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden py-1 animate-zoom-in">
+                                        <button
+                                            onClick={() => { setSelectedSubagent(null); setShowSubagentSelect(false); }}
+                                            className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors ${!selectedSubagent ? 'bg-[#F0F6FF] text-[#007AFF] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
+                                        >All Agents (Global Stats)</button>
+                                        <div className="border-t border-slate-100 my-1" />
+                                        <div className="overflow-y-auto max-h-56">
+                                            {subagents.length === 0 ? (
+                                                <div className="px-4 py-3 text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider text-center">No subagents found</div>
+                                            ) : (
+                                                subagents.map(agent => (
+                                                    <button
+                                                        key={agent.uid}
+                                                        onClick={() => { setSelectedSubagent(agent); setShowSubagentSelect(false); }}
+                                                        className={`w-full text-left px-4 py-2.5 text-[13px] transition-colors ${selectedSubagent?.uid === agent.uid ? 'bg-[#F0F6FF] text-[#007AFF] font-medium' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
+                                                    >{agent.name}</button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                        <Link href="/dashboard/properties/new" className="bg-[#007AFF] text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2">
+                            <Plus size={14} /> Add Property
+                        </Link>
+                    </div>
+                </div>
             </div>
-        </div>
 
             {/* ── Income Tab Content ── */}
             {activeTab === 'income' && (

@@ -105,7 +105,8 @@ const OwnerForm = ({ formData, setFormData }) => {
                         accountName: '',
                         accountNumber: '',
                         branch: '',
-                        mpesaNumber: ''
+                        mpesaNumber: '',
+                        mpesaType: 'b2c' // default to phone
                       }
                     }
                   }));
@@ -125,7 +126,8 @@ const OwnerForm = ({ formData, setFormData }) => {
                         accountName: client.name,
                         accountNumber: client.payoutMethod === 'bank' ? (client.payoutDetails || '') : '',
                         branch: '',
-                        mpesaNumber: client.payoutMethod === 'mpesa' ? (client.payoutDetails || client.phone || '') : ''
+                        mpesaNumber: client.payoutMethod === 'mpesa' ? (client.payoutDetails || client.phone || '') : '',
+                        mpesaType: client.payoutType || 'b2c'
                       }
                     }
                   }));
@@ -274,16 +276,28 @@ const OwnerForm = ({ formData, setFormData }) => {
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-[0.1em] flex items-center gap-2">
               <Hash size={14} />
-              M-Pesa / Paybill
+              M-Pesa Payout Method
             </label>
-            <input
-              type="text"
-              name="owner.bankDetails.mpesaNumber"
-              value={bank.mpesaNumber || ''}
-              onChange={handleChange}
-              placeholder="07XX XXX XXX or Paybill"
-              className="w-full h-11 px-4 bg-white border border-[#E2E8F0] rounded-md focus:border-[#007AFF] outline-none transition-all text-[13px] font-medium text-[#0F172A] placeholder:text-[#94A3B8]"
-            />
+            <div className="flex gap-2">
+              <select
+                name="owner.bankDetails.mpesaType"
+                value={bank.mpesaType || 'b2c'}
+                onChange={handleChange}
+                className="w-1/3 h-11 px-2 bg-white border border-[#E2E8F0] rounded-md focus:border-[#007AFF] outline-none transition-all text-[13px] font-medium text-[#0F172A]"
+              >
+                <option value="b2c">Phone No.</option>
+                <option value="till">Till No.</option>
+                <option value="paybill">Paybill No.</option>
+              </select>
+              <input
+                type="text"
+                name="owner.bankDetails.mpesaNumber"
+                value={bank.mpesaNumber || ''}
+                onChange={handleChange}
+                placeholder="07XX... or Till/Paybill"
+                className="flex-1 h-11 px-4 bg-white border border-[#E2E8F0] rounded-md focus:border-[#007AFF] outline-none transition-all text-[13px] font-medium text-[#0F172A] placeholder:text-[#94A3B8]"
+              />
+            </div>
           </div>
         </div>
 

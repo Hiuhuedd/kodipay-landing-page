@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
         const profile = docSnap.data();
         let agencyStatus = 'active';
         let subscription = { activePlan: 'starter_trial', status: 'trial', propertiesLimit: 2 };
+        let agencyName = '';
         
         if (profile.agencyId) {
           const settingsSnap = await getDoc(doc(db, 'settings', profile.agencyId));
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
             if (settings.accountStatus === 'Suspended') {
               agencyStatus = 'suspended';
             }
+            agencyName = settings.agencyName || '';
           }
 
           const agencySnap = await getDoc(doc(db, 'agencies', profile.agencyId));
@@ -39,6 +41,7 @@ export const AuthProvider = ({ children }) => {
           ...baseData,
           role: profile.role || 'subagent',
           agencyId: profile.agencyId,
+          agencyName,
           assignedProperties: profile.assignedProperties || [],
           name: profile.name || baseData.displayName,
           status: profile.status || 'active',

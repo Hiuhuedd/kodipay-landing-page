@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   RefreshCcw,
   User,
+  AlertCircle,
 } from 'lucide-react';
 import { completeSignup, sendVerification, verifyOtp } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';

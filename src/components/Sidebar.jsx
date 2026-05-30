@@ -28,7 +28,7 @@ const navItems = [
     { section: 'Properties & Tenants' },
     { href: '/dashboard/properties', icon: Building2, label: 'Properties' },
     { href: '/dashboard/tenants', icon: Users, label: 'Tenants' },
-    { href: '/dashboard/clients', icon: UserCheck, label: 'Client Management' },
+    { href: '/dashboard/clients', icon: UserCheck, label: 'Client Remitance', adminOnly: true },
     { href: '/dashboard/reminders', icon: Bell, label: 'Send Reminders' },
     { section: 'Finances' },
     { href: '/dashboard/transactions', icon: CreditCard, label: 'Transactions' },
@@ -43,8 +43,7 @@ const navItems = [
     { section: 'Administration' },
     { href: '/dashboard/staff', icon: ShieldCheck, label: 'Staff Management', adminOnly: true },
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing & SMS', adminOnly: true },
-    { href: '/dashboard/demo-requests', icon: Users, label: 'Demo Requests', adminOnly: true },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+    { href: '/dashboard/settings', icon: Settings, label: 'Settings', adminOnly: true },
 ];
 
 const walkthroughTips = [
@@ -217,10 +216,10 @@ export default function Sidebar() {
     const [tipIndex, setTipIndex] = useState(-1);
 
     // Dynamic guide tracking that updates on page change
-    const activeTip = tipIndex !== -1 
+    const activeTip = tipIndex !== -1
         ? walkthroughTips[tipIndex]
-        : (walkthroughTips.find(tip => 
-            tip.path === pathname || 
+        : (walkthroughTips.find(tip =>
+            tip.path === pathname ||
             (tip.path !== '/dashboard' && pathname?.startsWith(tip.path))
         ) || walkthroughTips[0]);
 
@@ -234,19 +233,19 @@ export default function Sidebar() {
     };
 
     return (
-        <aside 
+        <aside
             className={`hidden lg:flex flex-col h-full bg-white border-r border-[#E2E8F0] z-50 transition-all duration-300 ease-in-out shrink-0 ${isExpanded ? 'w-64' : 'w-[72px]'}`}
             onMouseEnter={() => setIsExpanded(true)}
             onMouseLeave={() => setIsExpanded(false)}
         >
             {/* Brand */}
             <div className="h-14 flex items-center px-[22px] border-b border-[#E2E8F0] shrink-0 overflow-hidden">
-                <div className="flex items-center gap-4 min-w-max">
+                <div className="flex items-center gap-3 w-full min-w-0">
                     <div className="w-7 h-7 bg-[#007AFF] rounded flex items-center justify-center shrink-0">
-                        <span className="text-white text-[13px] font-bold">K</span>
+                        <span className="text-white text-[13px] font-bold">{(user?.agencyName || 'K').charAt(0).toUpperCase()}</span>
                     </div>
-                    <span className={`text-[15px] font-semibold text-[#0F172A] tracking-tight transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
-                        KodiPay
+                    <span className={`text-[13px] leading-[1.15] font-bold text-[#0F172A] tracking-tight uppercase transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0 whitespace-normal break-words line-clamp-3' : 'opacity-0 -translate-x-2 whitespace-nowrap overflow-hidden'}`}>
+                        {user?.agencyName || 'KodiPay'}
                     </span>
                 </div>
             </div>
@@ -257,11 +256,10 @@ export default function Sidebar() {
                     if (item.section) {
                         if (item.section === 'Administration' && !isAdmin) return null;
                         return (
-                            <div 
-                                key={i} 
-                                className={`px-[22px] overflow-hidden flex items-center transition-all duration-300 ease-in-out ${
-                                    isExpanded ? 'pt-4 mb-1 h-8 opacity-100' : 'pt-0 mb-0 h-0 opacity-0 pointer-events-none'
-                                }`}
+                            <div
+                                key={i}
+                                className={`px-[22px] overflow-hidden flex items-center transition-all duration-300 ease-in-out ${isExpanded ? 'pt-4 mb-1 h-8 opacity-100' : 'pt-0 mb-0 h-0 opacity-0 pointer-events-none'
+                                    }`}
                             >
                                 <span className={`text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.1em] whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
                                     {item.section}
@@ -282,11 +280,10 @@ export default function Sidebar() {
                             <Link
                                 href={item.href}
                                 title={!isExpanded ? item.label : ''}
-                                className={`flex items-center gap-4 px-[10px] py-2 rounded-md transition-all relative group ${
-                                    isActive 
-                                    ? 'text-[#007AFF] bg-blue-50 font-medium' 
-                                    : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-                                }`}
+                                className={`flex items-center gap-4 px-[10px] py-2 rounded-md transition-all relative group ${isActive
+                                        ? 'text-[#007AFF] bg-blue-50 font-medium'
+                                        : 'text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+                                    }`}
                             >
                                 <div className="shrink-0 w-7 flex justify-center">
                                     <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
@@ -294,7 +291,7 @@ export default function Sidebar() {
                                 <span className={`text-[13px] font-medium whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
                                     {item.label}
                                 </span>
-                                
+
                                 {!isExpanded && isActive && (
                                     <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
                                 )}
@@ -317,7 +314,7 @@ export default function Sidebar() {
                     >
                         ✕
                     </button>
-                    
+
                     <div className="flex items-center gap-2 mb-2">
                         <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-amber-400">
                             {(() => {

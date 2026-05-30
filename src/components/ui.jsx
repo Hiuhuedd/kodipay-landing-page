@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Loader2, CheckCircle2, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -114,7 +115,7 @@ export function ProgressBar({ value, max, color }) {
 }
 
 export function Modal({ title, onClose, children, maxWidth = 'max-w-lg' }) {
-    return (
+    const content = (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className={`modal ${maxWidth}`}>
                 <div className="modal-header py-3 px-4">
@@ -130,6 +131,14 @@ export function Modal({ title, onClose, children, maxWidth = 'max-w-lg' }) {
             </div>
         </div>
     );
+    
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    if (mounted && typeof document !== 'undefined') {
+        return createPortal(content, document.body);
+    }
+    return null;
 }
 
 export function MonthPicker({ value, onChange }) {
@@ -165,58 +174,86 @@ export function PageHeader({ title, subtitle, children }) {
 }
 
 export function Toast({ message, type = 'success', onClose }) {
+    const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
+        setMounted(true);
         const timer = setTimeout(onClose, 3000);
         return () => clearTimeout(timer);
     }, [onClose]);
 
     const bg = type === 'success' ? 'bg-[var(--color-success)]' : 'bg-[var(--color-danger)]';
 
-    return (
+    const content = (
         <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-3 rounded-2xl text-white font-bold shadow-2xl animate-slide-up ${bg}`}>
             {type === 'success' ? <CheckCircle2 size={18} /> : <X size={18} />}
             <span className="text-sm">{message}</span>
         </div>
     );
+
+    if (mounted && typeof document !== 'undefined') {
+        return createPortal(content, document.body);
+    }
+    return null;
 }
 
 export function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', type = 'danger' }) {
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0F172A]/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white border border-[#E2E8F0] w-full max-w-[420px] rounded-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 p-6 text-left">
-                <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg border flex items-center justify-center shrink-0 ${
-                        type === 'danger' 
-                            ? 'bg-rose-50 text-rose-600 border-rose-100' 
-                            : 'bg-blue-50 text-[#007AFF] border-blue-100'
-                    }`}>
-                        {type === 'danger' ? <X size={20} /> : <CheckCircle2 size={20} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-[#0F172A] uppercase tracking-wider">{title}</h3>
-                        <p className="text-[11px] font-bold text-[#64748B] mt-2.5 leading-relaxed uppercase tracking-wider">{message}</p>
+    const isDanger = type === 'danger';
+
+    const content = (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white border border-[#E2E8F0]/80 w-full max-w-[420px] rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col relative">
+                
+                {/* Decorative Top Line */}
+                <div className={`absolute top-0 left-0 w-full h-[3px] ${isDanger ? 'bg-rose-500' : 'bg-[#0F172A]'}`} />
+                
+                <div className="p-8">
+                    <div className="flex flex-col items-center text-center gap-5">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                            isDanger 
+                                ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-100' 
+                                : 'bg-[#F8FAFC] text-[#0F172A] ring-1 ring-[#E2E8F0]'
+                        }`}>
+                            {isDanger ? <X size={28} strokeWidth={2.5} /> : <CheckCircle2 size={28} strokeWidth={2.5} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-[17px] font-extrabold text-[#0F172A] tracking-tight">{title}</h3>
+                            <p className="text-[13px] font-medium text-[#64748B] mt-2.5 leading-relaxed">{message}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#F1F5F9] pt-4">
-                    <button
-                        onClick={onCancel}
-                        className="h-10 px-5 bg-white border border-[#E2E8F0] text-[#64748B] rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-[#F8FAFC] transition-colors cursor-pointer"
-                    >
-                        {cancelText}
-                    </button>
-                    <button
-                        onClick={onConfirm}
-                        className={`h-10 px-6 text-white rounded-md text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                            type === 'danger'
-                                ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-100'
-                                : 'bg-[#007AFF] hover:bg-blue-600 shadow-md shadow-blue-100'
-                        }`}
-                    >
-                        {confirmText}
-                    </button>
+                <div className="px-8 py-5 bg-[#F8FAFC]/60 flex items-center justify-center gap-3 border-t border-[#F1F5F9]">
+                    {cancelText && (
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 h-11 px-5 bg-white border border-[#E2E8F0] text-[#475569] rounded-xl text-[13px] font-bold tracking-wide hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-all cursor-pointer shadow-sm focus:outline-none"
+                        >
+                            {cancelText}
+                        </button>
+                    )}
+                    {onConfirm && (
+                        <button
+                            onClick={onConfirm}
+                            className={`flex-1 h-11 px-6 text-white rounded-xl text-[13px] font-bold tracking-wide transition-all cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5 focus:outline-none ${
+                                isDanger
+                                    ? 'bg-[#E11D48] hover:bg-[#BE123C] shadow-rose-200'
+                                    : 'bg-[#0F172A] hover:bg-[#1E293B] shadow-slate-200'
+                            }`}
+                        >
+                            {confirmText}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     );
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    if (mounted && typeof document !== 'undefined') {
+        return createPortal(content, document.body);
+    }
+    return null;
 }

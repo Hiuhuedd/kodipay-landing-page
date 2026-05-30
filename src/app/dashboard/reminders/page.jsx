@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getOverduePayments, sendReminders, getCurrentMonth, formatCurrency, getStats } from '@/lib/api';
+import { getOverduePayments, sendReminders, getCurrentMonth, formatCurrency, getStats, getSettings } from '@/lib/api';
 import { PageHeader, LoadingPage, Badge, EmptyState, ConfirmModal, Toast } from '@/components/ui';
 import { Bell, CheckCircle2, AlertTriangle, Users, Landmark, UserCheck, Send, FileText } from 'lucide-react';
 
@@ -72,32 +72,81 @@ export default function RemindersPage() {
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (selectedTenants.length === 0) return alert('Please select at least one tenant to remind.');
         
-        setConfirmSend({
-            title: 'Send Payment Reminders',
-            message: `Are you sure you want to send automated SMS payment reminders to ${selectedTenants.length} selected tenant(s)?`,
-            confirmText: 'Yes, Send Messages',
-            type: 'primary',
-            onConfirm: async () => {
-                setSending(true);
-                setConfirmSend(null);
-                try {
-                    const r = await sendReminders(selectedTenants, month);
-                    setResult(r.data || r);
-                    setSent(true);
-                    
-                    const statsData = await getStats(`${month}&t=${Date.now()}`);
-                    setStats(statsData?.data || statsData);
-                } catch (e) {
-                    console.error(e);
-                    alert('Failed to send reminders. Please try again.');
-                } finally {
-                    setSending(false);
-                }
+        try {
+            setSending(true);
+            const settingsRes = await getSettings();
+            const settingsData = settingsRes?.data || settingsRes || {};
+            setSending(false);
+
+            const pm = settingsData.paymentMethods;
+            
+            const isInvalidMpesa = (val) => !val || val.trim() === '' || val === '522533' || val.toLowerCase() === 'none' || val.toLowerCase() === 'n/a';
+            
+            const hasValidMpesa = pm?.mpesaActive && !isInvalidMpesa(pm.mpesaNumber);
+            const hasValidBank = pm?.bankActive && pm.bankAccountNumber && pm.bankAccountNumber.trim() !== '';
+            const hasValidLegacyPaybill = !pm && !isInvalidMpesa(settingsData.paybill);
+            
+            const hasPaymentInstructions = hasValidMpesa || hasValidBank || hasValidLegacyPaybill;
+
+            if (!hasPaymentInstructions) {
+                setConfirmSend({
+                    title: 'Action Required: Payment Configuration',
+                    message: 'Payment collection instructions have not been configured for your agency. To ensure your tenants receive accurate remittance details, please configure your active payment methods (M-Pesa, Bank, or Cash) before dispatching SMS reminders.',
+                    confirmText: 'Configure Settings',
+                    cancelText: 'Close',
+                    type: 'primary',
+                    onConfirm: () => {
+                        window.location.href = '/dashboard/settings';
+                    }
+                });
+                return;
             }
-        });
+
+            const isTierIntegrated = ['dedicated_mpesa', 'kodipay_paybill', 'tier2', 'tier3'].includes(settingsData.integrationTier);
+
+            if (!isTierIntegrated) {
+                setConfirmSend({
+                    title: 'Standard Reminders',
+                    message: 'Your account is currently set to manual payment collection. Your tenants will receive standard SMS reminders with manual payment instructions. To include automatic "1-Tap Pay Online" links in your messages, consider upgrading to a Tier 2 Daraja integration in your Settings. Would you like to proceed with dispatching these standard reminders?',
+                    confirmText: 'Dispatch Reminders',
+                    type: 'primary',
+                    onConfirm: proceedWithSend
+                });
+            } else {
+                setConfirmSend({
+                    title: 'Send Payment Reminders',
+                    message: `Are you sure you want to send automated SMS payment reminders to ${selectedTenants.length} selected tenant(s)?`,
+                    confirmText: 'Yes, Send Messages',
+                    type: 'primary',
+                    onConfirm: proceedWithSend
+                });
+            }
+        } catch (error) {
+            console.error('Failed to verify settings:', error);
+            setSending(false);
+            alert('Failed to verify agency settings. Please try again.');
+        }
+    };
+
+    const proceedWithSend = async () => {
+        setSending(true);
+        setConfirmSend(null);
+        try {
+            const r = await sendReminders(selectedTenants, month);
+            setResult(r.data || r);
+            setSent(true);
+            
+            const statsData = await getStats(`${month}&t=${Date.now()}`);
+            setStats(statsData?.data || statsData);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to send reminders. Please try again.');
+        } finally {
+            setSending(false);
+        }
     };
 
     // Calculate outstanding sum locally for instant metrics

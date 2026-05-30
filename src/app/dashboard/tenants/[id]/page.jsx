@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Phone, Calendar, User, Building2, CreditCard, DollarSign, ArrowUpRight, TrendingUp, Bell, Trash2, Loader2 } from 'lucide-react';
-import { getTenantById, getMonthlyReport, deleteTenant, sendReminders, getCurrentMonth, formatCurrency, formatDate } from '@/lib/api';
-import { PageHeader, LoadingPage, Badge, MonthPicker, ConfirmModal } from '@/components/ui';
+import { ArrowLeft, Phone, Calendar, User, Building2, CreditCard, DollarSign, ArrowUpRight, TrendingUp, Bell, Trash2, Loader2, Edit2, X, Save } from 'lucide-react';
+import { getTenantById, getMonthlyReport, deleteTenant, sendReminders, updateTenant, getCurrentMonth, formatCurrency, formatDate } from '@/lib/api';
+import { PageHeader, LoadingPage, Badge, MonthPicker, ConfirmModal, Modal } from '@/components/ui';
 
 export default function TenantDetailPage() {
     const { id } = useParams();
@@ -18,6 +18,44 @@ export default function TenantDetailPage() {
     const [reminderSent, setReminderSent] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        phone: '',
+        idNumber: '',
+        rentDueDay: '',
+        moveInDate: ''
+    });
+
+    const openEditModal = () => {
+        setEditForm({
+            name: tenant.name || '',
+            phone: tenant.phone || '',
+            idNumber: tenant.idNumber || '',
+            rentDueDay: tenant.rentDueDay || 1,
+            moveInDate: tenant.moveInDate ? tenant.moveInDate.split('T')[0] : ''
+        });
+        setShowEditModal(true);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        setEditing(true);
+        try {
+            await updateTenant(tenant.id, editForm);
+            setShowEditModal(false);
+            
+            // Reload tenant details
+            const tenantData = await getTenantById(id);
+            setTenant(tenantData?.data || tenantData);
+        } catch (err) {
+            console.error('[TENANT DETAIL] Failed to update tenant:', err);
+            alert('Failed to update tenant details.');
+        } finally {
+            setEditing(false);
+        }
+    };
 
     const handleDeleteTenant = async () => {
         if (!tenant) return;
@@ -135,10 +173,16 @@ export default function TenantDetailPage() {
                         </button>
                     )}
                     <button 
+                        onClick={openEditModal}
+                        className="h-9 px-4 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-md text-[13px] font-semibold hover:bg-[#F8FAFC] transition-colors inline-flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                        <Edit2 size={14} /> Edit
+                    </button>
+                    <button 
                         onClick={() => setShowDeleteConfirm(true)}
                         className="h-9 px-4 bg-white border border-rose-200 text-rose-600 rounded-md text-[13px] font-semibold hover:bg-rose-50 transition-colors inline-flex items-center gap-2 shadow-sm cursor-pointer"
                     >
-                        <Trash2 size={14} /> Delete Tenant
+                        <Trash2 size={14} /> Delete
                     </button>
                     <a 
                         href={`tel:${tenant.phone}`} 
@@ -317,6 +361,84 @@ export default function TenantDetailPage() {
                     onConfirm={handleDeleteTenant}
                     onCancel={() => setShowDeleteConfirm(false)}
                 />
+            )}
+
+            {showEditModal && (
+                <Modal title="Edit Tenant Details" onClose={() => setShowEditModal(false)}>
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <div>
+                            <label className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1 block">Full Name</label>
+                            <input
+                                type="text"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-[13px] text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1 block">Phone Number</label>
+                            <input
+                                type="tel"
+                                value={editForm.phone}
+                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-[13px] text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1 block">ID / Passport Number</label>
+                            <input
+                                type="text"
+                                value={editForm.idNumber}
+                                onChange={(e) => setEditForm({ ...editForm, idNumber: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-[13px] text-[#0F172A] focus:border-[#007AFF] outline-none"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1 block">Rent Due Day</label>
+                                <select
+                                    value={editForm.rentDueDay}
+                                    onChange={(e) => setEditForm({ ...editForm, rentDueDay: e.target.value })}
+                                    className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-[13px] text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                >
+                                    {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                                        <option key={day} value={day}>{day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'} of month</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1 block">Move-in Date</label>
+                                <input
+                                    type="date"
+                                    value={editForm.moveInDate}
+                                    onChange={(e) => setEditForm({ ...editForm, moveInDate: e.target.value })}
+                                    className="w-full h-10 px-3 bg-white border border-[#E2E8F0] rounded-md text-[13px] text-[#0F172A] focus:border-[#007AFF] outline-none"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowEditModal(false)}
+                                className="h-10 px-4 bg-[#F1F5F9] text-[#64748B] rounded-md text-xs font-bold uppercase tracking-widest hover:bg-[#E2E8F0]"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editing}
+                                className="h-10 px-6 bg-[#007AFF] text-white rounded-md text-xs font-bold uppercase tracking-widest hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {editing ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
             )}
         </div>
     );
