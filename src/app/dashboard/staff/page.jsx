@@ -137,7 +137,7 @@ export default function StaffManagementPage() {
             {/* ── Page Header ── */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[#0F172A]">Staff Management</h2>
+                    <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[#0F172A]">My Team</h2>
                     <p className="text-xs text-[#64748B] mt-1 uppercase tracking-widest">Manage your agency team and property access</p>
                 </div>
 

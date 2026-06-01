@@ -41,7 +41,7 @@ const navItems = [
     { href: '/dashboard/reports/tenant', icon: Users, label: 'Tenant Statement' },
     { href: '/dashboard/reports/client', icon: UserCheck, label: 'Client Report' },
     { section: 'Administration' },
-    { href: '/dashboard/staff', icon: ShieldCheck, label: 'Staff Management', adminOnly: true },
+    { href: '/dashboard/staff', icon: ShieldCheck, label: 'My Team', adminOnly: true },
     { href: '/dashboard/billing', icon: CreditCard, label: 'Billing & SMS', adminOnly: true },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings', adminOnly: true },
 ];
@@ -169,7 +169,7 @@ const walkthroughTips = [
     },
     {
         path: '/dashboard/staff',
-        title: 'Staff Management',
+        title: 'My Team',
         icon: ShieldCheck,
         steps: [
             'Add management agents and assign specific property clusters.',

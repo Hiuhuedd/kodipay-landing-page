@@ -127,7 +127,7 @@ export default function AssignPropertiesPage() {
                     onClick={() => router.push('/dashboard/staff')}
                     className="inline-flex items-center gap-2 h-9 px-4 bg-[#F1F5F9] text-[#0F172A] rounded-md text-xs font-semibold hover:bg-[#E2E8F0] transition-colors cursor-pointer"
                 >
-                    <ArrowLeft size={14} /> Back to Staff Management
+                    <ArrowLeft size={14} /> Back to My Team
                 </button>
             </div>
         );

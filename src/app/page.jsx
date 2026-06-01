@@ -422,7 +422,7 @@ export default function RootPage() {
                         />
                         <FeatureCard 
                             icon={<ShieldCheck size={18} />} 
-                            title="Staff Management" 
+                            title="My Team" 
                             desc="Assign properties to your agents, track their collections, and manage your entire team easily from your account."
                         />
                     </div>

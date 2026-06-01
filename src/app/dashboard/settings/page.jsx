@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings, registerMpesaWebhooks, API_BASE_URL } from '@/lib/api';
+import { encryptData, decryptData } from '@/lib/encryption';
 import { PageHeader, LoadingPage } from '@/components/ui';
 import { useAuth } from '@/lib/AuthContext';
 import { 
@@ -160,6 +161,18 @@ export default function SettingsPage() {
         return updated;
     };
 
+    const getEncryptedSettingsForUpdate = async () => {
+        const updated = getCleanedSettingsForUpdate();
+        if (updated.mpesaCredentials) {
+            for (const key of ['consumerKey', 'consumerSecret', 'passkey', 'securityCredential']) {
+                if (updated.mpesaCredentials[key]) {
+                    updated.mpesaCredentials[key] = await encryptData(updated.mpesaCredentials[key]);
+                }
+            }
+        }
+        return updated;
+    };
+
     const handleRegisterWebhooks = async () => {
         const creds = settings.mpesaCredentials;
         if (!creds || !creds.consumerKey || !creds.consumerSecret || !creds.shortCode) {
@@ -170,7 +183,7 @@ export default function SettingsPage() {
         setRegistering(true);
         try {
             // First save the current settings so the backend has the latest credentials!
-            const updated = getCleanedSettingsForUpdate();
+            const updated = await getEncryptedSettingsForUpdate();
             await updateSettings(updated);
             
             // Now register
@@ -197,9 +210,16 @@ export default function SettingsPage() {
 
     useEffect(() => {
         getSettings()
-            .then(d => {
+            .then(async d => {
                 const s = d?.data || d;
                 if (s) {
+                    if (s.mpesaCredentials) {
+                        for (const key of ['consumerKey', 'consumerSecret', 'passkey', 'securityCredential']) {
+                            if (s.mpesaCredentials[key]) {
+                                s.mpesaCredentials[key] = await decryptData(s.mpesaCredentials[key]);
+                            }
+                        }
+                    }
                     setSettings(prev => {
                         const merged = {
                             ...prev,
@@ -227,7 +247,7 @@ export default function SettingsPage() {
         try {
             // Keep legacy fallbacks synced with structured payment method parameters
             // Clean up empty tier fields to prevent overwriting existing valid DB credentials
-            const updated = getCleanedSettingsForUpdate();
+            const updated = await getEncryptedSettingsForUpdate();
             await updateSettings(updated);
             if (refreshUser) {
                 await refreshUser();
