@@ -264,12 +264,12 @@ export default function RootPage() {
 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
 
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-100 rounded-full mb-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-100 rounded-full mb-8">
                         <Sparkles size={11} />
                         <span className="text-[10px] font-bold uppercase tracking-widest">Systemize your administrative workflows</span>
                     </div>
 
-                    <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
+                    <h1 className="text-4xl mb-5 lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
                         <span
                             className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white font-extrabold pr-1 ${animState === 'exiting'
                                 ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4'
@@ -282,10 +282,10 @@ export default function RootPage() {
                         </span>{' '}
                         way to manage your rental properties.
                     </h1>
-                    <p className="text-sm lg:text-base text-white/80 leading-relaxed max-w-xl mx-auto">
+                    <p className="text-sm mt-5 lg:text-base text-white/80 leading-relaxed max-w-xl mx-auto">
                         Manage tenants, send automatic payment reminders, and keep track of your income and expenses in one simple place.
                     </p>
-                    <div className="flex flex-wrap justify-center gap-3 pt-2">
+                    <div className="flex flex-wrap justify-center gap-3 pt-2 mt-5">
                         <Link
                             href="/signup"
                             className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2  transform hover:-translate-y-0.5 cursor-pointer"
