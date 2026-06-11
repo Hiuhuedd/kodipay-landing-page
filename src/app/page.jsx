@@ -8,7 +8,7 @@ import {
     Building2, ShieldCheck, MessageSquare, Landmark, 
     Smartphone, ArrowRight, Zap, Droplets, Check, 
     Sparkles, Key, BarChart3, ChevronRight, HelpCircle, Star,
-    Download, Network
+    Download, Network, Menu, X, Users, Receipt, AlertCircle, Phone
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -47,21 +47,40 @@ export default function RootPage() {
         fetchPrices();
     }, []);
 
-    // Tab switchers
-    const [activeTab, setActiveTab] = useState('ledgers'); // 'ledgers' | 'utilities' | 'agents'
-    const [integrationTab, setIntegrationTab] = useState('payments'); // 'payments' | 'bills'
-    const [expandedGuide, setExpandedGuide] = useState(null); // null | 'mpesa' | 'bank' | 'sms' | 'bills'
-    const [calcTab, setCalcTab] = useState('electricity'); // 'electricity' | 'water'
-    
-    // Calculator States
-    const [prevRead, setPrevRead] = useState('120');
-    const [currRead, setCurrRead] = useState('155');
-    const [waterUsage, setWaterUsage] = useState('4.5');
-
     // Demo Modal States
     const [showDemoModal, setShowDemoModal] = useState(false);
     const [demoSubmitted, setDemoSubmitted] = useState(false);
     const [demoForm, setDemoForm] = useState({ name: '', email: '', phone: '', portfolioSize: '10-50' });
+
+    // Mobile Menu State
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // SMS Sample State
+    const [smsPhone, setSmsPhone] = useState('');
+    const [smsName, setSmsName] = useState('kodipay');
+    const [smsAmount, setSmsAmount] = useState('2000');
+    const [smsStatus, setSmsStatus] = useState('idle'); // idle, sending, sent
+
+    const handleSendSampleSms = (e) => {
+        e.preventDefault();
+        if (!smsPhone) return;
+        setSmsStatus('sending');
+        setTimeout(() => {
+            setSmsStatus('sent');
+            setTimeout(() => setSmsStatus('idle'), 3000);
+        }, 1500);
+    };
+
+    // Features list for navigation
+    const featureLinks = [
+        { id: 'record-keeping', label: 'Agency Record Keeping' },
+        { id: 'payment-matching', label: 'Tenant-Payment Matching' },
+        { id: 'sms-reminders', label: 'SMS Reminders' },
+        { id: 'sub-agency', label: 'Sub Agency' },
+        { id: 'utilities-billing', label: 'Utilities Billing' },
+        { id: 'reports', label: 'Reports' },
+        { id: 'penalties', label: 'Late Penalties' }
+    ];
 
     // Cycling words for hero section text animation
     const words = ["The easiest", "The simplest", "The smartest", "The fastest", "The modern"];
@@ -81,40 +100,6 @@ export default function RootPage() {
         }, 3200);
         return () => clearInterval(interval);
     }, []);
-
-    // Live calculations
-    const getElectricityBill = () => {
-        const p = parseFloat(prevRead) || 0;
-        const c = parseFloat(currRead) || 0;
-        const consumption = Math.max(0, c - p);
-        
-        // Tiered Pricing: Tier 1: 0-30 @ KES 12, Tier 2: 30-100 @ KES 16.45, Tier 3: 100+ @ KES 19.08
-        let rawBill = 0;
-        if (consumption <= 30) {
-            rawBill = consumption * 12;
-        } else if (consumption <= 100) {
-            rawBill = (30 * 12) + ((consumption - 30) * 16.45);
-        } else {
-            rawBill = (30 * 12) + (70 * 16.45) + ((consumption - 100) * 19.08);
-        }
-        
-        return {
-            consumption: consumption.toFixed(1),
-            roundedTotal: Math.round(rawBill),
-            isTiered: true
-        };
-    };
-
-    const getWaterBill = () => {
-        const usage = parseFloat(waterUsage) || 0;
-        // Standard rate KES 135 per unit + KES 100 standing fee
-        const rawBill = (usage * 135) + 100;
-        return {
-            consumption: usage.toFixed(1),
-            roundedTotal: Math.round(rawBill),
-            isTiered: false
-        };
-    };
 
     const handleDemoSubmit = async (e) => {
         e.preventDefault();
@@ -143,10 +128,8 @@ export default function RootPage() {
         );
     }
 
-    const calcResult = calcTab === 'electricity' ? getElectricityBill() : getWaterBill();
-
     return (
-        <div className="min-h-screen bg-white text-[#0F172A] font-sans antialiased overflow-x-hidden text-left">
+        <div className="min-h-screen bg-white text-[#0F172A] font-sans antialiased overflow-x-hidden text-left scroll-smooth">
             {/* ── Header Navigation ── */}
             <header className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-md border-b border-[#E2E8F0] z-50 px-6 lg:px-12 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -154,24 +137,24 @@ export default function RootPage() {
                         <Building2 size={16} />
                     </div>
                     <span className="font-bold text-[15px] tracking-tight text-[#0F172A]">KodiPay</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-[#007AFF] px-2 py-0.5 rounded border border-blue-100">Simple & Easy</span>
+                    <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-[#007AFF] px-2 py-0.5 rounded border border-blue-100">Simple & Easy</span>
                 </div>
 
-                <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-[#64748B]">
-                    <a href="#features" className="hover:text-[#0F172A] transition-colors">How it Helps</a>
-                    <a href="#playground" className="hover:text-[#0F172A] transition-colors">Bill Calculator</a>
-                    <a href="#console" className="hover:text-[#0F172A] transition-colors">Preview</a>
-                    <a href="#integrations" className="hover:text-[#0F172A] transition-colors">Integrations</a>
+                {/* Desktop Nav */}
+                <nav className="hidden xl:flex items-center gap-5 text-[11px] font-semibold text-[#64748B]">
+                    {featureLinks.map(link => (
+                        <a key={link.id} href={`#${link.id}`} className="hover:text-[#0F172A] transition-colors">{link.label}</a>
+                    ))}
                     <a href="#pricing" className="hover:text-[#0F172A] transition-colors">Pricing</a>
                 </nav>
 
-                <div className="flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4">
                     {user ? (
                         <Link 
                             href="/dashboard"
                             className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
                         >
-                            Go to Dashboard <ArrowRight size={13} />
+                            Dashboard <ArrowRight size={13} />
                         </Link>
                     ) : (
                         <>
@@ -182,19 +165,83 @@ export default function RootPage() {
                                 href="/signup"
                                 className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
                             >
-                                Get Started Free
+                                Get Started
                             </Link>
                         </>
                     )}
                 </div>
+
+                {/* Mobile Menu Toggle */}
+                <button 
+                    className="md:hidden p-2 text-[#0F172A] focus:outline-none"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
             </header>
+
+            {/* Mobile Dropdown Menu */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 top-16 z-40 bg-white/95 backdrop-blur-sm border-b border-[#E2E8F0] md:hidden overflow-y-auto px-6 py-8">
+                    <nav className="flex flex-col gap-6">
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Features</p>
+                            {featureLinks.map(link => (
+                                <a 
+                                    key={link.id} 
+                                    href={`#${link.id}`} 
+                                    className="block text-lg font-bold text-[#0F172A]"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {link.label}
+                                </a>
+                            ))}
+                            <a 
+                                href="#pricing" 
+                                className="block text-lg font-bold text-[#0F172A]"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                Pricing
+                            </a>
+                        </div>
+                        <hr className="border-[#E2E8F0]" />
+                        <div className="flex flex-col gap-4">
+                            {user ? (
+                                <Link 
+                                    href="/dashboard"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="bg-[#007AFF] text-white text-sm font-bold h-12 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    Go to Dashboard <ArrowRight size={16} />
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link 
+                                        href="/signin" 
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="border border-[#E2E8F0] text-[#0F172A] text-sm font-bold h-12 rounded-md flex items-center justify-center transition-colors"
+                                    >
+                                        Sign In
+                                    </Link>
+                                    <Link 
+                                        href="/signup"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="bg-[#007AFF] text-white text-sm font-bold h-12 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                    >
+                                        Get Started Free
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    </nav>
+                </div>
+            )}
 
             {/* ── Hero Section ── */}
             <section 
                 className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-cover bg-center bg-no-repeat overflow-hidden z-10"
                 style={{ backgroundImage: "url('/premium_photo.avif')" }}
             >
-                {/* Premium Dark Overlay with a subtle backdrop blur for luxury cinematic feel */}
                 <div className="absolute inset-0 bg-[#3C280D]/45 backdrop-blur-[1px] -z-10" />
                 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
@@ -217,20 +264,18 @@ export default function RootPage() {
                         way to manage your rental properties.
                     </h1>
                     <p className="text-sm lg:text-base text-slate-300 leading-relaxed max-w-xl mx-auto">
-                        Manage tenants. Easily calculate water and electricity bills, send automatic payment reminders to tenants, and keep track of your income and expenses in one simple place.
+                        Manage tenants, send automatic payment reminders, and keep track of your income and expenses in one simple place.
                     </p>
                     <div className="flex flex-wrap justify-center gap-3 pt-2">
                         <Link 
                             href="/signup"
                             className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2 shadow-md shadow-blue-100 transform hover:-translate-y-0.5 cursor-pointer"
-                            id="btn-hero-signup"
                         >
                             Get Started Free <ArrowRight size={14} />
                         </Link>
                         <button 
                             onClick={() => setShowDemoModal(true)}
                             className="bg-white/10 border border-white/20 text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-white/20 transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
-                            id="btn-hero-demo"
                         >
                             Ask for a Demo
                         </button>
@@ -251,141 +296,149 @@ export default function RootPage() {
                 </div>
             </section>
 
-            {/* ── Interactive Bill Calculator Section ── */}
-            <section id="playground" className="py-20 px-6 lg:px-12 bg-[#F8FAFC] border-t border-b border-[#E2E8F0]">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                    {/* Left side describing calculator details */}
-                    <div className="lg:col-span-5 space-y-5 text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 text-[#16A34A] rounded-full">
-                            <Zap size={11} className="animate-pulse" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Try it out now</span>
+            {/* ── 1. Consistent Agency Record Keeping ── */}
+            <section id="record-keeping" className="py-20 px-6 lg:px-12 bg-white">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 text-[#007AFF] rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 1</span>
                         </div>
-                        <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A]">
-                            Calculate tenant bills in seconds.
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Consistent Agency Record Keeping
                         </h2>
-                        <p className="text-xs lg:text-sm text-[#64748B] leading-relaxed">
-                            Use our live calculation playground to see how simple utility billing is with KodiPay. Choose water or electricity, type in the meter readings, and see the exact rounded bill computed instantly.
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Maintain flawless financial and operational records. KodiPay securely logs every transaction, property update, and tenant history, ensuring your agency stays organized, compliant, and ready for any audit. No more missing paperwork or scattered spreadsheets.
                         </p>
-                        <div className="pt-2 space-y-3 text-xs text-[#64748B]">
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[10px]">1</div>
-                                <span>Select utility rate calculations (water or electricity)</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[10px]">2</div>
-                                <span>Input the previous and current meter readings</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[10px]">3</div>
-                                <span>Copy or print the final rounded shilling amount instantly</span>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-6 rounded-2xl shadow-inner">
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="bg-white p-4 rounded-xl border border-[#E2E8F0] flex items-center justify-between shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#007AFF] flex items-center justify-center"><Building2 size={18} /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-[#0F172A]">Property Ledger {i}</p>
+                                                <p className="text-[10px] text-[#64748B]">Updated just now</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-xs font-semibold text-emerald-600">Synced</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    {/* Right side interactive playground box */}
-                    <div className="lg:col-span-7">
-                        <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xl overflow-hidden relative">
-                            {/* Decorative header */}
-                            <div className="absolute top-0 inset-x-0 h-[4px] bg-gradient-to-r from-[#007AFF] to-[#00C3FF]"></div>
-                            
-                            <div className="p-6 border-b border-[#F1F5F9] flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-bold text-[13px] text-[#0F172A] uppercase tracking-wider">Live Bill Calculator</h3>
-                                    <p className="text-[10px] text-[#64748B] mt-0.5">Calculate your water or electricity bills instantly.</p>
+            {/* ── 2. Automated Tenant-Payment Matching ── */}
+            <section id="payment-matching" className="py-20 px-6 lg:px-12 bg-[#F8FAFC] border-y border-[#E2E8F0]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 2</span>
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Automated Tenant-Payment Matching
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Say goodbye to manual reconciliation. KodiPay instantly connects bank transfers and M-Pesa payments directly to the correct tenant. Rent balances update in real-time without you lifting a finger.
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-xl space-y-5">
+                            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-4">
+                                <span className="text-xs font-bold text-[#64748B] uppercase">Incoming Payment</span>
+                                <Network className="text-emerald-500" size={20} />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 animate-pulse">
+                                    <Check size={24} />
                                 </div>
-                                <div className="flex bg-[#F1F5F9] p-0.5 rounded-md">
-                                    <button 
-                                        onClick={() => setCalcTab('electricity')}
-                                        className={`h-7 px-3 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${calcTab === 'electricity' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                                    >Electricity</button>
-                                    <button 
-                                        onClick={() => setCalcTab('water')}
-                                        className={`h-7 px-3 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${calcTab === 'water' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                                    >Water</button>
+                                <div>
+                                    <p className="text-lg font-extrabold text-[#0F172A]">KES 25,000</p>
+                                    <p className="text-xs text-[#64748B]">Matched to John Doe (Unit B4)</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                            <div className="p-6 space-y-6">
-                                {calcTab === 'electricity' ? (
-                                    <div className="space-y-4">
-                                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-4 rounded-lg text-xs leading-relaxed text-[#64748B]">
-                                            <strong className="text-[#0F172A]">How electricity rates are calculated:</strong>
-                                            <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-[#E2E8F0] text-[10px] uppercase font-bold text-center">
-                                                <div>First 30 units: KES 12 each</div>
-                                                <div>Next 70 units: KES 16.45 each</div>
-                                                <div>Above 100 units: KES 19.08 each</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Previous Meter Reading (kWh)</label>
-                                                <input 
-                                                    type="number"
-                                                    value={prevRead}
-                                                    onChange={e => setPrevRead(e.target.value)}
-                                                    className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md outline-none text-xs text-[#0F172A] focus:border-[#007AFF] focus:bg-white"
-                                                    id="calc-elec-prev"
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Current Meter Reading (kWh)</label>
-                                                <input 
-                                                    type="number"
-                                                    value={currRead}
-                                                    onChange={e => setCurrRead(e.target.value)}
-                                                    className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md outline-none text-xs text-[#0F172A] focus:border-[#007AFF] focus:bg-white"
-                                                    id="calc-elec-curr"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-4 rounded-lg text-xs leading-relaxed text-[#64748B]">
-                                            <strong className="text-[#0F172A]">How water rates are calculated:</strong>
-                                            <p className="mt-1">Calculated at KES 135 for each unit of water used, plus a flat KES 100 monthly connection fee. Bills are rounded to the nearest shilling.</p>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Water Units Used (m³)</label>
+            {/* ── 3. SMS Reminders ── */}
+            <section id="sms-reminders" className="py-20 px-6 lg:px-12 bg-white">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-100 text-amber-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 3</span>
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Smart SMS Reminders
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Keep your tenants informed. Automatically send rent invoices, receipts, and polite payment reminders directly to their phones via SMS. Test it out below by sending a sample reminder to your phone!
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-[#0F172A] border border-[#334155] p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                            <div className="absolute -right-6 -top-6 text-[#1E293B]">
+                                <MessageSquare size={120} />
+                            </div>
+                            <div className="relative z-10 space-y-6">
+                                <div>
+                                    <h3 className="text-white font-bold mb-1">Try a Sample SMS</h3>
+                                    <p className="text-xs text-[#94A3B8]">See exactly what your tenants receive.</p>
+                                </div>
+                                <form onSubmit={handleSendSampleSms} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Amount</label>
                                             <input 
                                                 type="number"
-                                                value={waterUsage}
-                                                onChange={e => setWaterUsage(e.target.value)}
-                                                className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md outline-none text-xs text-[#0F172A] focus:border-[#007AFF] focus:bg-white"
-                                                id="calc-water-usage"
+                                                value={smsAmount}
+                                                onChange={(e) => setSmsAmount(e.target.value)}
+                                                className="w-full h-10 px-3 bg-white/10 border border-white/20 rounded-md outline-none text-xs text-white focus:border-blue-400"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Sender Name</label>
+                                            <input 
+                                                type="text"
+                                                value={smsName}
+                                                onChange={(e) => setSmsName(e.target.value)}
+                                                className="w-full h-10 px-3 bg-white/10 border border-white/20 rounded-md outline-none text-xs text-white focus:border-blue-400"
                                             />
                                         </div>
                                     </div>
-                                )}
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Your Phone Number</label>
+                                        <input 
+                                            type="tel"
+                                            value={smsPhone}
+                                            onChange={(e) => setSmsPhone(e.target.value)}
+                                            placeholder="e.g. 07XX XXX XXX"
+                                            required
+                                            className="w-full h-10 px-3 bg-white border border-transparent rounded-md outline-none text-xs text-[#0F172A] focus:ring-2 focus:ring-blue-400"
+                                        />
+                                    </div>
+                                    <button 
+                                        type="submit"
+                                        disabled={smsStatus === 'sending'}
+                                        className="w-full h-11 bg-[#007AFF] hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70"
+                                    >
+                                        {smsStatus === 'sending' ? (
+                                            <span className="animate-pulse">Sending...</span>
+                                        ) : smsStatus === 'sent' ? (
+                                            <><Check size={16} /> Sample Sent Successfully!</>
+                                        ) : (
+                                            <><Smartphone size={16} /> Send Sample SMS</>
+                                        )}
+                                    </button>
+                                </form>
 
-                                {/* Bill calculations output console */}
-                                <div className="bg-[#0F172A] text-white p-5 rounded-xl space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[9px] font-bold tracking-widest text-[#94A3B8] uppercase">Your Calculated Bill</span>
-                                        <span className="px-2 py-0.5 bg-white/10 text-white rounded text-[8px] font-semibold uppercase tracking-wider">Calculated Instantly</span>
-                                    </div>
-                                    
-                                    <div className="flex items-end justify-between">
-                                        <div>
-                                            <p className="text-[10px] text-[#94A3B8]">Total Bill (Nearest Shilling)</p>
-                                            <p className="text-3xl font-extrabold tracking-tight text-white mt-1" id="calc-result-bill">
-                                                KES {calcResult.roundedTotal.toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] text-[#94A3B8]">Total Units Used</p>
-                                            <p className="text-sm font-semibold text-white mt-0.5">
-                                                {calcResult.consumption} {calcTab === 'electricity' ? 'kWh' : 'm³'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-white/10 pt-3 flex items-center justify-between text-[10px] text-[#94A3B8]">
-                                        <span className="flex items-center gap-1"><ShieldCheck size={11} className="text-[#10B981]" /> Accurate and ready to send to tenants</span>
-                                        <span className="font-semibold text-white">Nearest Shilling Rounded</span>
-                                    </div>
+                                {/* Sample Preview Message */}
+                                <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-lg text-xs text-[#CBD5E1] font-mono leading-relaxed">
+                                    "Dear Tenant, your rent of KES {smsAmount} is due. Please pay to {smsName}. Thank you."
                                 </div>
                             </div>
                         </div>
@@ -393,419 +446,147 @@ export default function RootPage() {
                 </div>
             </section>
 
-            {/* ── Value Proposition Section ── */}
-            <section id="features" className="py-20 px-6 lg:px-12 bg-white">
-                <div className="max-w-7xl mx-auto space-y-16">
-                    <div className="max-w-2xl text-left space-y-3">
-                        <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Built for Property Owners</p>
-                        <h2 className="text-3xl font-bold tracking-tight text-[#0F172A]">Easy Management, Clear Bookkeeping</h2>
-                        <p className="text-[#64748B] text-xs lg:text-sm leading-relaxed">
-                            Stop chasing tenants for rent and writing down utility bills by hand. KodiPay helps you send reminders, track rent payments, and manage your properties from a single, simple dashboard.
+            {/* ── 4. Sub Agency ── */}
+            <section id="sub-agency" className="py-20 px-6 lg:px-12 bg-[#F8FAFC] border-y border-[#E2E8F0]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-100 text-purple-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 4</span>
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Sub Agency Management
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Scale your business effortlessly. Create accounts for your subagents, assign them specific properties, and track their performance. Maintain overall control while empowering your team to collect rent efficiently.
                         </p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <FeatureCard 
-                            icon={<Landmark size={18} />} 
-                            title="Simple Bookkeeping" 
-                            desc="See all your rent collections, income, and expenses in one clear view. No more errors or lost records."
-                        />
-                        <FeatureCard 
-                            icon={<Smartphone size={18} />} 
-                            title="Automatic Reminders" 
-                            desc="Send rent bills and reminders to your tenants automatically via SMS. Tenants can pay easily and quickly."
-                        />
-                        <FeatureCard 
-                            icon={<Zap size={18} />} 
-                            title="Easy Bill Calculation" 
-                            desc="Calculate electricity and water bills automatically. Rounding to the nearest shilling makes bills clear for your tenants."
-                        />
-                        <FeatureCard 
-                            icon={<ShieldCheck size={18} />} 
-                            title="My Team" 
-                            desc="Assign properties to your agents, track their collections, and manage your entire team easily from your account."
-                        />
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Platform Console Showcase ── */}
-            <section id="console" className="py-20 px-6 lg:px-12 bg-[#F8FAFC] border-t border-[#E2E8F0]">
-                <div className="max-w-7xl mx-auto space-y-12">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="max-w-xl text-left space-y-3">
-                            <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Clear Dashboard Views</p>
-                            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A]">Everything You Need in One Place</h2>
-                            <p className="text-[#64748B] text-xs leading-relaxed">
-                                Look at the simple screens below to see how easy it is to use KodiPay to manage your rentals and team.
-                            </p>
-                        </div>
-                        <div className="flex bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0] self-start md:self-auto shrink-0">
-                            <button 
-                                onClick={() => setActiveTab('ledgers')}
-                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'ledgers' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                            >Rent Collections</button>
-                            <button 
-                                onClick={() => setActiveTab('utilities')}
-                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'utilities' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                            >Utility Bills</button>
-                            <button 
-                                onClick={() => setActiveTab('agents')}
-                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${activeTab === 'agents' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                            >My Agents</button>
-                        </div>
-                    </div>
-
-                    {/* Interactive UI Mockup Card */}
-                    <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xl overflow-hidden min-h-[400px] flex flex-col justify-between">
-                        {/* Browser Topbar Mockup */}
-                        <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-6 py-3.5 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-                                <div className="h-5 px-3 bg-white border border-[#E2E8F0] rounded ml-4 text-[10px] text-[#64748B] flex items-center font-mono w-64 select-none">
-                                    https://kodipay.com/dashboard
-                                </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-xl space-y-4">
+                            <div className="flex items-center gap-3 border-b border-[#F1F5F9] pb-4">
+                                <Users className="text-purple-600" size={24} />
+                                <h3 className="font-bold text-sm text-[#0F172A]">Team Overview</h3>
                             </div>
-                            <span className="text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider">Simple Preview</span>
-                        </div>
-
-                        {/* Interactive Screen Body */}
-                        <div className="p-8 flex-1">
-                            {activeTab === 'ledgers' && (
-                                <div className="space-y-6 animate-fade-in text-left">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-                                            <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-2">Rent Collected This Month</p>
-                                            <p className="text-2xl font-bold text-[#16A34A]">KES 1,006,000</p>
+                            <div className="space-y-3">
+                                {[
+                                    { name: 'Angela Mwangi', role: 'Agent', props: '4 assigned', color: 'bg-purple-100 text-purple-700' },
+                                    { name: 'David Ochieng', role: 'Agent', props: '2 assigned', color: 'bg-blue-100 text-blue-700' }
+                                ].map((agent, i) => (
+                                    <div key={i} className="flex justify-between items-center p-3 hover:bg-[#F8FAFC] rounded-lg transition-colors border border-transparent hover:border-[#E2E8F0]">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full ${agent.color} flex items-center justify-center font-bold text-xs`}>
+                                                {agent.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-[#0F172A]">{agent.name}</p>
+                                                <p className="text-[10px] text-[#64748B]">{agent.role}</p>
+                                            </div>
                                         </div>
-                                        <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-                                            <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-2">Expected Rent</p>
-                                            <p className="text-2xl font-bold text-[#0F172A]">KES 334,223</p>
-                                        </div>
-                                        <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-                                            <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest mb-2">Unpaid Rent Balance</p>
-                                            <p className="text-2xl font-bold text-[#D97706]">KES 248,023</p>
-                                        </div>
+                                        <span className="text-[10px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2 py-1 rounded">{agent.props}</span>
                                     </div>
-
-                                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-5">
-                                        <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider mb-3">Recent Payments</h4>
-                                        <div className="divide-y divide-[#E2E8F0]">
-                                            <div className="py-2.5 flex items-center justify-between text-xs font-medium">
-                                                <span className="text-[#0F172A]">edward hiuhu</span>
-                                                <span className="font-semibold text-emerald-600">KES 1,000,000</span>
-                                                <span className="font-mono text-[#64748B] text-[10px]">BANK_TRANSFER</span>
-                                            </div>
-                                            <div className="py-2.5 flex items-center justify-between text-xs font-medium">
-                                                <span className="text-[#0F172A]">EDD</span>
-                                                <span className="font-semibold text-emerald-600">KES 2,000</span>
-                                                <span className="font-mono text-[#64748B] text-[10px]">MPESA_MANUAL</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'utilities' && (
-                                <div className="space-y-6 animate-fade-in text-left">
-                                    <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden">
-                                        <table className="w-full text-left border-collapse text-xs">
-                                            <thead>
-                                                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                                                    <th className="p-3 font-bold uppercase text-[9px] tracking-wider text-[#64748B]">Unit</th>
-                                                    <th className="p-3 font-bold uppercase text-[9px] tracking-wider text-[#64748B]">Previous Meter</th>
-                                                    <th className="p-3 font-bold uppercase text-[9px] tracking-wider text-[#64748B]">Current Meter</th>
-                                                    <th className="p-3 font-bold uppercase text-[9px] tracking-wider text-[#64748B] text-right">Total Bill</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-[#F1F5F9]">
-                                                <tr>
-                                                    <td className="p-3 font-bold text-[#0F172A]">Unit 1 (kk hiuhu)</td>
-                                                    <td className="p-3 text-[#64748B]">0 kWh</td>
-                                                    <td className="p-3 text-[#0F172A] font-medium">2.3 kWh</td>
-                                                    <td className="p-3 text-right font-bold text-[#0F172A]">KES 28</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="p-3 font-bold text-[#0F172A]">Q1 (Vacant)</td>
-                                                    <td className="p-3 text-[#64748B]">0 kWh</td>
-                                                    <td className="p-3 text-[#0F172A] font-medium">0 kWh</td>
-                                                    <td className="p-3 text-right font-bold text-[#64748B]">KES 0</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'agents' && (
-                                <div className="space-y-6 animate-fade-in text-left">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-8 h-8 rounded bg-[#F0F6FF] text-[#007AFF] flex items-center justify-center font-bold">EH</div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-[#0F172A]">Edward Hiuhu</p>
-                                                    <p className="text-[10px] text-[#64748B]">Lead Agent</p>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 pt-2 border-t border-[#F1F5F9] text-xs">
-                                                <div className="flex justify-between"><span className="text-[#64748B]">Assigned Properties</span><span className="font-bold text-[#0F172A]">4 Properties</span></div>
-                                                <div className="flex justify-between"><span className="text-[#64748B]">Collection Rate</span><span className="font-bold text-emerald-600">98.4%</span></div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-8 h-8 rounded bg-[#FDF2F8] text-[#DB2777] flex items-center justify-center font-bold">AM</div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-[#0F172A]">Angela Mwangi</p>
-                                                    <p className="text-[10px] text-[#64748B]">Agent</p>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 pt-2 border-t border-[#F1F5F9] text-xs">
-                                                <div className="flex justify-between"><span className="text-[#64748B]">Assigned Properties</span><span className="font-bold text-[#0F172A]">2 Properties</span></div>
-                                                <div className="flex justify-between"><span className="text-[#64748B]">Collection Rate</span><span className="font-bold text-[#007AFF]">92.1%</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Banner bottom */}
-                        <div className="bg-[#0F172A] p-4 text-center text-xs text-white flex items-center justify-center gap-2">
-                            <span>Ready to simplify your property management?</span>
-                            <Link href="/signup" className="text-[#007AFF] font-bold hover:underline flex items-center gap-0.5">
-                                Create your free account today <ChevronRight size={14} />
-                            </Link>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* ── Integrations Section ── */}
-            <section id="integrations" className="py-20 px-6 lg:px-12 bg-white border-t border-[#E2E8F0]">
-                <div className="max-w-7xl mx-auto space-y-12">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="max-w-xl text-left space-y-3">
-                            <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Enterprise Connectivity</p>
-                            <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A]">Seamless System Integrations</h2>
-                            <p className="text-[#64748B] text-xs leading-relaxed">
-                                Automate your property business by linking KodiPay with mobile wallets, bank accounts, and field devices.
-                            </p>
+            {/* ── 5. Utilities Billing ── */}
+            <section id="utilities-billing" className="py-20 px-6 lg:px-12 bg-white">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-50 border border-cyan-100 text-cyan-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 5</span>
                         </div>
-                        <div className="flex bg-[#F1F5F9] p-0.5 rounded-lg border border-[#E2E8F0] self-start md:self-auto shrink-0">
-                            <button 
-                                onClick={() => { setIntegrationTab('payments'); setExpandedGuide(null); }}
-                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${integrationTab === 'payments' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                            >Payments Automation</button>
-                            <button 
-                                onClick={() => { setIntegrationTab('bills'); setExpandedGuide(null); }}
-                                className={`h-8 px-4 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${integrationTab === 'bills' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'}`}
-                            >Utility Bill Collection</button>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Utilities Billing
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Record electricity and water meter readings accurately. KodiPay manages tiered utility rates and automatically bills tenants the correct amount alongside their rent. Never lose track of utility consumption again.
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full grid grid-cols-2 gap-4">
+                        <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm text-center space-y-3">
+                            <div className="mx-auto w-12 h-12 bg-cyan-50 text-cyan-600 rounded-full flex items-center justify-center"><Zap size={24} /></div>
+                            <h3 className="font-bold text-[#0F172A] text-sm">Electricity</h3>
+                            <p className="text-xs text-[#64748B]">Tiered billing integrated</p>
+                        </div>
+                        <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm text-center space-y-3">
+                            <div className="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center"><Droplets size={24} /></div>
+                            <h3 className="font-bold text-[#0F172A] text-sm">Water</h3>
+                            <p className="text-xs text-[#64748B]">Fixed & variable rates</p>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    {integrationTab === 'payments' ? (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Card 1: Bank API */}
-                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'bank' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'}`}>
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-[#007AFF] flex items-center justify-center mb-4">
-                                    <Landmark size={20} />
-                                </div>
-                                <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">Bank API Integrations</h3>
-                                <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
-                                    Link your commercial bank accounts directly with KodiPay to automatically track and match tenant bank transfers in real-time.
-                                </p>
-                                <button 
-                                    onClick={() => setExpandedGuide(expandedGuide === 'bank' ? null : 'bank')}
-                                    className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
-                                >
-                                    {expandedGuide === 'bank' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'bank' ? 'rotate-90' : ''}`} />
-                                </button>
-
-                                {expandedGuide === 'bank' && (
-                                    <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
-                                        <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
-                                        <div className="space-y-2 text-xs text-[#475569]">
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
-                                                <p>Contact your corporate banking representative (Equity, KCB, Co-op, etc.) to request API/Webhook integration.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
-                                                <p>KodiPay will generate a unique Bank Webhook URL (e.g., <code className="bg-[#F8FAFC] px-1 py-0.5 border rounded font-mono text-[10px] text-[#007AFF]">https://api.kodipay.com/v1/webhooks/bank</code>).</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
-                                                <p>Provide this Webhook URL to your bank so they can configure transaction push alerts to KodiPay.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
-                                                <p>Save your bank API keys in the KodiPay dashboard to enable secure decryption and instant matching.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+            {/* ── 6. Reports ── */}
+            <section id="reports" className="py-20 px-6 lg:px-12 bg-[#F8FAFC] border-y border-[#E2E8F0]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 6</span>
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Comprehensive Reports
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Make informed business decisions with deep insights. Generate monthly statements, rent arrears summaries, and collection performance metrics. Downloadable in PDF and CSV for your accountants.
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-xl space-y-5">
+                            <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-4">
+                                <span className="text-xs font-bold text-[#64748B] uppercase">Monthly Overview</span>
+                                <BarChart3 className="text-indigo-500" size={20} />
                             </div>
-
-                            {/* Card 2: M-Pesa API */}
-                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'mpesa' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'}`}>
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                                    <Network size={20} />
+                            <div className="space-y-4">
+                                <div className="h-4 bg-indigo-50 rounded-full overflow-hidden flex">
+                                    <div className="bg-indigo-500 w-[75%] h-full"></div>
+                                    <div className="bg-indigo-200 w-[15%] h-full"></div>
                                 </div>
-                                <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">M-Pesa API Integration</h3>
-                                <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
-                                    Connect your M-Pesa C2B Paybill or Till number directly via Safaricom Daraja API for fully automated reconciliation.
-                                </p>
-                                <button 
-                                    onClick={() => setExpandedGuide(expandedGuide === 'mpesa' ? null : 'mpesa')}
-                                    className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
-                                >
-                                    {expandedGuide === 'mpesa' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'mpesa' ? 'rotate-90' : ''}`} />
-                                </button>
-
-                                {expandedGuide === 'mpesa' && (
-                                    <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
-                                        <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
-                                        <div className="space-y-2 text-xs text-[#475569]">
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
-                                                <p>Register or log in on the official <strong>Safaricom Daraja Developer Portal</strong>.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
-                                                <p>Create a new App on Daraja to get your <strong>Consumer Key</strong>, <strong>Consumer Secret</strong>, and <strong>Passkey</strong>.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
-                                                <p>Enter these details in KodiPay under <strong>Settings → Integrations → M-Pesa</strong>.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
-                                                <p>Click "Initialize Webhook" inside KodiPay. Payments are now tracked and credited automatically!</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Card 3: SMS Forwarder */}
-                            <div className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 text-left ${expandedGuide === 'sms' ? 'border-[#007AFF]' : 'border-[#E2E8F0]'} flex flex-col justify-between`}>
-                                <div>
-                                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center mb-4">
-                                        <Smartphone size={20} />
-                                    </div>
-                                    <h3 className="font-extrabold text-sm text-[#0F172A] tracking-tight">Automatic M-Pesa SMS Forwarding</h3>
-                                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
-                                        Using personal Till numbers or standard SIM lines? Our Android SMS Forwarder app forwards transaction SMS to KodiPay servers.
-                                    </p>
-                                    <button 
-                                        onClick={() => setExpandedGuide(expandedGuide === 'sms' ? null : 'sms')}
-                                        className="text-[#007AFF] text-xs font-bold mt-4 hover:underline flex items-center gap-1 focus:outline-none"
-                                    >
-                                        {expandedGuide === 'sms' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'sms' ? 'rotate-90' : ''}`} />
-                                    </button>
-
-                                    {expandedGuide === 'sms' && (
-                                        <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
-                                            <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
-                                            <div className="space-y-2 text-xs text-[#475569]">
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
-                                                    <p>Download and install our APK on the Android phone that receives the payment SMS notifications.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
-                                                    <p>Open the app and log in securely using the <strong>One-Time Password (OTP)</strong> sent to your registered number.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
-                                                    <p>Grant the necessary SMS read permissions to allow automated packet forwarding.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
-                                                    <p>Keep the app active in the background. Payments will post on your ledger inside 3 seconds!</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="mt-6 pt-4 border-t border-[#F1F5F9]">
-                                    <a 
-                                        href="/downloads/sms-forwarder.apk" 
-                                        download
-                                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm focus:outline-none"
-                                    >
-                                        <Download size={14} /> Download Forwarder App
-                                    </a>
+                                <div className="flex justify-between text-[10px] font-bold text-[#64748B]">
+                                    <span className="text-indigo-600">Collected: 75%</span>
+                                    <span>Pending: 15%</span>
+                                    <span>Defaults: 10%</span>
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <div className="max-w-2xl mx-auto bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm text-left flex flex-col md:flex-row gap-8 items-start">
-                            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 text-[#007AFF] flex items-center justify-center shrink-0">
-                                <Building2 size={24} />
+                    </div>
+                </div>
+            </section>
+
+            {/* ── 7. Late Payment Penalties ── */}
+            <section id="penalties" className="py-20 px-6 lg:px-12 bg-white border-b border-[#E2E8F0]">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-6 text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 text-red-600 rounded-full">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Feature 7</span>
+                        </div>
+                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#0F172A]">
+                            Late Payment Penalties
+                        </h2>
+                        <p className="text-sm lg:text-base text-[#64748B] leading-relaxed">
+                            Encourage timely payments. Set custom late penalty rules (fixed amounts or percentages) and KodiPay will automatically apply them to overdue tenant invoices after the grace period ends.
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <div className="bg-red-50 border border-red-100 p-6 rounded-2xl shadow-sm text-left flex flex-col md:flex-row items-center md:items-start gap-4">
+                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-red-500 shrink-0">
+                                <AlertCircle size={24} />
                             </div>
-                            <div className="space-y-4 flex-1">
-                                <div>
-                                    <h3 className="font-extrabold text-base text-[#0F172A] tracking-tight">KodiPay Utility Bills Collection App</h3>
-                                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
-                                        Empower your field agents with our offline-first utility billing app. Record water and electricity meter readings on the spot, compute bills instantly based on tiered schedules, and sync when online.
-                                    </p>
-                                </div>
-
-                                <div className="pt-2">
-                                    <button 
-                                        onClick={() => setExpandedGuide(expandedGuide === 'bills' ? null : 'bills')}
-                                        className="text-[#007AFF] text-xs font-bold hover:underline flex items-center gap-1 focus:outline-none"
-                                    >
-                                        {expandedGuide === 'bills' ? 'Hide Integration Guide' : 'How to Set Up'} <ChevronRight size={14} className={`transform transition-transform ${expandedGuide === 'bills' ? 'rotate-90' : ''}`} />
-                                    </button>
-
-                                    {expandedGuide === 'bills' && (
-                                        <div className="mt-4 pt-4 border-t border-[#F1F5F9] space-y-3 animate-fade-in">
-                                            <h4 className="text-[10px] font-bold text-[#0F172A] uppercase tracking-wider">Step-by-Step Setup Guide</h4>
-                                            <div className="space-y-2 text-xs text-[#475569]">
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
-                                                    <p>Download and install the **KodiPay Bills App** onto your team's Android field devices.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
-                                                    <p>Log in using your registered Landlord or Agent dashboard credentials.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
-                                                    <p>Walk around the property, select a unit, and type the current meter reading. The app automatically calculates rates offline.</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-blue-50 text-[#007AFF] flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
-                                                    <p>Click "Submit & Sync" to upload the bills to the server and instantly send SMS invoices to your tenants.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="pt-4">
-                                    <a 
-                                        href="/downloads/kodipay-bills.apk" 
-                                        download
-                                        className="inline-flex h-11 px-6 bg-[#0F172A] hover:bg-slate-800 text-white text-xs font-bold rounded-lg items-center gap-2 transition-colors shadow-sm focus:outline-none"
-                                    >
-                                        <Download size={14} /> Download Utility Bills App
-                                    </a>
-                                </div>
+                            <div className="text-center md:text-left">
+                                <h3 className="font-bold text-red-800 text-sm">Penalty Applied Automatically</h3>
+                                <p className="text-xs text-red-600 mt-2 leading-relaxed">
+                                    A penalty of KES 500 has been applied to Unit 402 for exceeding the payment deadline by 5 days.
+                                </p>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </section>
 
             {/* ── Transparent Pricing Section ── */}
-            <section id="pricing" className="py-20 px-6 lg:px-12 bg-white border-t border-[#E2E8F0]">
+            <section id="pricing" className="py-20 px-6 lg:px-12 bg-[#F8FAFC]">
                 <div className="max-w-7xl mx-auto space-y-16">
                     <div className="max-w-xl mx-auto text-center space-y-3">
                         <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Simple Pricing Plans</p>
@@ -996,18 +777,6 @@ export default function RootPage() {
                     </div>
                 </div>
             )}
-        </div>
-    );
-}
-
-function FeatureCard({ icon, title, desc }) {
-    return (
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm hover:border-[#007AFF] transition-all duration-300 hover:shadow-md text-left">
-            <div className="w-9 h-9 rounded-lg bg-[#F0F6FF] border border-[#D9E9FF] text-[#007AFF] flex items-center justify-center mb-4">
-                {icon}
-            </div>
-            <h3 className="font-bold text-sm text-[#0F172A] tracking-tight">{title}</h3>
-            <p className="text-xs text-[#64748B] leading-relaxed mt-2">{desc}</p>
         </div>
     );
 }
