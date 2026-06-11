@@ -140,7 +140,7 @@ export default function RootPage() {
             <header className="fixed top-0 inset-x-0 h-16 bg-[#0047a5]/80 backdrop-blur-md border-b border-white/10 z-50 px-6 lg:px-12 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center">
-                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-12 w-auto object-contain" />
+                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-14 w-auto object-contain" />
                     </div>
                     <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded border border-white/20">Simple & Easy</span>
                 </div>
@@ -203,7 +203,7 @@ export default function RootPage() {
                                     key={link.id}
                                     href={`#${link.id}`}
                                     className="flex items-center justify-between text-base font-bold text-[#0F172A] py-3 border-b border-[#F1F5F9] last:border-0 hover:text-[#007AFF] transition-colors"
-                                    style={{ 
+                                    style={{
                                         animation: `fadeSlideIn 0.3s ease forwards ${i * 0.05}s`,
                                         opacity: 0
                                     }}
@@ -264,13 +264,18 @@ export default function RootPage() {
 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
 
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-100 rounded-full mb-2">
+                        <Sparkles size={11} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Systemize your administrative workflows</span>
+                    </div>
+
                     <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
                         <span
                             className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-white font-extrabold pr-1 ${animState === 'exiting'
-                                    ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4'
-                                    : animState === 'entering'
-                                        ? 'transition-none opacity-0 translate-y-4'
-                                        : 'transition-all duration-500 ease-out opacity-100 translate-y-0'
+                                ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4'
+                                : animState === 'entering'
+                                    ? 'transition-none opacity-0 translate-y-4'
+                                    : 'transition-all duration-500 ease-out opacity-100 translate-y-0'
                                 }`}
                         >
                             {words[wordIndex]}
@@ -283,29 +288,27 @@ export default function RootPage() {
                     <div className="flex flex-wrap justify-center gap-3 pt-2">
                         <Link
                             href="/signup"
-                            className="bg-white text-[#0047a5] text-xs font-bold h-11 px-6 rounded-md hover:bg-slate-100 transition-all flex items-center gap-2 transform hover:-translate-y-0.5 cursor-pointer shadow-sm"
+                            className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2  transform hover:-translate-y-0.5 cursor-pointer"
                         >
                             Get Started Free <ArrowRight size={14} />
                         </Link>
                         <button
                             onClick={() => setShowDemoModal(true)}
-                            className="bg-white/10 border border-white/20 text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-white/20 transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
+                            className="bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] text-xs font-bold h-11 px-6 rounded-md hover:bg-[#F1F5F9] transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
                         >
                             Ask for a Demo
                         </button>
                     </div>
 
-                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 border-t border-white/20 w-full max-w-md mx-auto text-center">
+                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 border-t border-[#E2E8F0] w-full max-w-md mx-auto text-center">
                         <div className="flex -space-x-2">
                             {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-[#0047a5] flex items-center justify-center text-[10px] font-bold text-white">
+                                <div key={i} className="w-8 h-8 rounded-full bg-[#F1F5F9] border-2 border-white flex items-center justify-center text-[10px] font-bold text-[#64748B]">
                                     {i === 4 ? '+2k' : `A${i}`}
                                 </div>
                             ))}
                         </div>
-                        <p className="text-[11px] text-slate-400 font-medium leading-tight">
-                            Trusted by over <strong className="text-white">250 landlords and agents</strong> across East Africa.
-                        </p>
+
                     </div>
                 </div>
             </section>
