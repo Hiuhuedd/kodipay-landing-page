@@ -57,8 +57,8 @@ export default function RootPage() {
 
     // SMS Sample State
     const [smsPhone, setSmsPhone] = useState('');
-    const [smsName, setSmsName] = useState('kodipay');
-    const [smsAmount, setSmsAmount] = useState('2000');
+    const [smsName, setSmsName] = useState('ED');
+    const [smsAmount, setSmsAmount] = useState('11,175');
     const [smsStatus, setSmsStatus] = useState('idle'); // idle, sending, sent
 
     const handleSendSampleSms = (e) => {
@@ -133,8 +133,8 @@ export default function RootPage() {
             {/* ── Header Navigation ── */}
             <header className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-md border-b border-[#E2E8F0] z-50 px-6 lg:px-12 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white shadow-sm">
-                        <Building2 size={16} />
+                    <div className="flex items-center justify-center">
+                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-8 w-auto object-contain" />
                     </div>
                     <span className="font-bold text-[15px] tracking-tight text-[#0F172A]">KodiPay</span>
                     <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-[#007AFF] px-2 py-0.5 rounded border border-blue-100">Simple & Easy</span>
@@ -239,10 +239,8 @@ export default function RootPage() {
 
             {/* ── Hero Section ── */}
             <section 
-                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-cover bg-center bg-no-repeat overflow-hidden z-10"
-                style={{ backgroundImage: "url('/premium_photo.avif')" }}
+                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-[#0F172A] overflow-hidden z-10"
             >
-                <div className="absolute inset-0 bg-[#3C280D]/45 backdrop-blur-[1px] -z-10" />
                 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-400 rounded-full">
@@ -438,7 +436,7 @@ export default function RootPage() {
 
                                 {/* Sample Preview Message */}
                                 <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-lg text-xs text-[#CBD5E1] font-mono leading-relaxed">
-                                    "Dear Tenant, your rent of KES {smsAmount} is due. Please pay to {smsName}. Thank you."
+                                    "Dear {smsName}, rent for unit A1 is due. Please pay KSh {smsAmount} via Paybill M-Pesa Paybill 4005473"
                                 </div>
                             </div>
                         </div>
@@ -676,8 +674,8 @@ export default function RootPage() {
             <footer className="bg-[#0F172A] text-white py-12 px-6 lg:px-12 border-t border-white/10">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-                            <Building2 size={16} />
+                        <div className="flex items-center justify-center">
+                            <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-8 w-auto object-contain" />
                         </div>
                         <span className="font-bold text-[14px] tracking-tight">KodiPay</span>
                         <span className="text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest ml-2">&copy; {new Date().getFullYear()} KodiPay Systems Ltd.</span>
