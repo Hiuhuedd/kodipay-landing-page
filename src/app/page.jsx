@@ -137,39 +137,39 @@ export default function RootPage() {
     return (
         <div className="min-h-screen bg-white text-[#0F172A] font-sans antialiased overflow-x-hidden text-left scroll-smooth">
             {/* ── Header Navigation ── */}
-            <header className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-md border-b border-[#E2E8F0] z-50 px-6 lg:px-12 flex items-center justify-between">
+            <header className="fixed top-0 inset-x-0 h-16 bg-[#0047a5] border-b border-white/10 z-50 px-6 lg:px-12 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center">
-                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-10 w-auto object-contain" />
+                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-10 w-auto object-contain brightness-0 invert" />
                     </div>
-                    <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-[#007AFF] px-2 py-0.5 rounded border border-blue-100">Simple & Easy</span>
+                    <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-white/10 text-white px-2 py-0.5 rounded border border-white/20">Simple & Easy</span>
                 </div>
 
                 {/* Desktop Nav */}
-                <nav className="hidden xl:flex items-center gap-1 bg-[#F8FAFC] px-2 py-1.5 rounded-full border border-[#E2E8F0]">
+                <nav className="hidden xl:flex items-center gap-1 bg-white/10 backdrop-blur-sm px-2 py-1.5 rounded-full border border-white/20">
                     {featureLinks.map(link => (
-                        <a key={link.id} href={`#${link.id}`} className="text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-white px-3 py-1.5 rounded-full transition-all">{link.label}</a>
+                        <a key={link.id} href={`#${link.id}`} className="text-[11px] font-bold text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-full transition-all">{link.label}</a>
                     ))}
-                    <div className="w-[1px] h-3 bg-[#CBD5E1] mx-1"></div>
-                    <a href="#pricing" className="text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-white px-3 py-1.5 rounded-full transition-all">Pricing</a>
+                    <div className="w-[1px] h-3 bg-white/20 mx-1"></div>
+                    <a href="#pricing" className="text-[11px] font-bold text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-full transition-all">Pricing</a>
                 </nav>
 
                 <div className="hidden md:flex items-center gap-4">
                     {user ? (
                         <Link
                             href="/dashboard"
-                            className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
+                            className="bg-white text-[#0047a5] text-xs font-bold h-9 px-4 rounded-md hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm"
                         >
                             Dashboard <ArrowRight size={13} />
                         </Link>
                     ) : (
                         <>
-                            <Link href="/signin" className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors">
+                            <Link href="/signin" className="text-xs font-semibold text-white/80 hover:text-white transition-colors">
                                 Sign In
                             </Link>
                             <Link
                                 href="/signup"
-                                className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
+                                className="bg-white text-[#0047a5] text-xs font-bold h-9 px-4 rounded-md hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm"
                             >
                                 Get Started
                             </Link>
@@ -179,7 +179,7 @@ export default function RootPage() {
 
                 {/* Mobile Menu Toggle */}
                 <button
-                    className="md:hidden p-2 text-[#0F172A] focus:outline-none"
+                    className="md:hidden p-2 text-white focus:outline-none"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 >
                     {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -189,17 +189,30 @@ export default function RootPage() {
             {/* Mobile Dropdown Menu */}
             {mobileMenuOpen && (
                 <div className="fixed inset-0 top-16 z-40 bg-white/95 backdrop-blur-sm border-b border-[#E2E8F0] md:hidden overflow-y-auto px-6 py-8">
+                    <style>{`
+                        @keyframes fadeSlideIn {
+                            from { opacity: 0; transform: translateY(10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                    `}</style>
                     <nav className="flex flex-col gap-6">
                         <div className="space-y-4">
                             <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Features</p>
-                            {featureLinks.map(link => (
+                            {featureLinks.map((link, i) => (
                                 <a
                                     key={link.id}
                                     href={`#${link.id}`}
                                     className="flex items-center justify-between text-base font-bold text-[#0F172A] py-3 border-b border-[#F1F5F9] last:border-0 hover:text-[#007AFF] transition-colors"
+                                    style={{ 
+                                        animation: `fadeSlideIn 0.3s ease forwards ${i * 0.05}s`,
+                                        opacity: 0
+                                    }}
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    {link.label}
+                                    <span className="flex items-center gap-3">
+                                        <span className="text-[10px] font-black text-[#007AFF] bg-blue-50 w-6 h-6 flex items-center justify-center rounded-full shrink-0">{i + 1}</span>
+                                        {link.label}
+                                    </span>
                                     <ChevronRight size={16} className="text-[#94A3B8]" />
                                 </a>
                             ))}
@@ -246,14 +259,14 @@ export default function RootPage() {
 
             {/* ── Hero Section ── */}
             <section
-                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-gradient-to-br from-[#0F172A] via-[#0F172A] to-[#007AFF]/20 overflow-hidden z-10"
+                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-white overflow-hidden z-10"
             >
 
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
 
-                    <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
+                    <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-[#0F172A]">
                         <span
-                            className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-blue-400 font-extrabold pr-1 ${animState === 'exiting'
+                            className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-[#007AFF] via-blue-500 to-[#007AFF] font-extrabold pr-1 ${animState === 'exiting'
                                     ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4'
                                     : animState === 'entering'
                                         ? 'transition-none opacity-0 translate-y-4'
@@ -264,7 +277,7 @@ export default function RootPage() {
                         </span>{' '}
                         way to manage your rental properties.
                     </h1>
-                    <p className="text-sm lg:text-base text-slate-300 leading-relaxed max-w-xl mx-auto">
+                    <p className="text-sm lg:text-base text-[#64748B] leading-relaxed max-w-xl mx-auto">
                         Manage tenants, send automatic payment reminders, and keep track of your income and expenses in one simple place.
                     </p>
                     <div className="flex flex-wrap justify-center gap-3 pt-2">
@@ -276,16 +289,16 @@ export default function RootPage() {
                         </Link>
                         <button
                             onClick={() => setShowDemoModal(true)}
-                            className="bg-white/10 border border-white/20 text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-white/20 transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
+                            className="bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] text-xs font-bold h-11 px-6 rounded-md hover:bg-[#F1F5F9] transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
                         >
                             Ask for a Demo
                         </button>
                     </div>
 
-                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 border-t border-white/10 w-full max-w-md mx-auto text-center">
+                    <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 border-t border-[#E2E8F0] w-full max-w-md mx-auto text-center">
                         <div className="flex -space-x-2">
                             {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="w-8 h-8 rounded-full bg-white/20 border-2 border-[#0F172A] flex items-center justify-center text-[10px] font-bold text-slate-300">
+                                <div key={i} className="w-8 h-8 rounded-full bg-[#F1F5F9] border-2 border-white flex items-center justify-center text-[10px] font-bold text-[#64748B]">
                                     {i === 4 ? '+2k' : `A${i}`}
                                 </div>
                             ))}
