@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
-import { 
-    Building2, ShieldCheck, MessageSquare, Landmark, 
-    Smartphone, ArrowRight, Zap, Droplets, Check, 
+import {
+    Building2, ShieldCheck, MessageSquare, Landmark,
+    Smartphone, ArrowRight, Zap, Droplets, Check,
     Sparkles, Key, BarChart3, ChevronRight, HelpCircle, Star,
     Download, Network, Menu, X, Users, Receipt, AlertCircle, Phone
 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { submitDemoRequest } from '@/lib/api';
+import { submitDemoRequest, sendTestSms } from '@/lib/api';
 
 export default function RootPage() {
     const router = useRouter();
@@ -61,14 +61,20 @@ export default function RootPage() {
     const [smsAmount, setSmsAmount] = useState('11,175');
     const [smsStatus, setSmsStatus] = useState('idle'); // idle, sending, sent
 
-    const handleSendSampleSms = (e) => {
+    const handleSendSampleSms = async (e) => {
         e.preventDefault();
         if (!smsPhone) return;
         setSmsStatus('sending');
-        setTimeout(() => {
+        try {
+            const message = `Dear ${smsName}, rent for unit A1 is due. Please pay KSh ${smsAmount} via Paybill M-Pesa Paybill 4005473`;
+            await sendTestSms(smsPhone, message);
             setSmsStatus('sent');
-            setTimeout(() => setSmsStatus('idle'), 3000);
-        }, 1500);
+            setTimeout(() => setSmsStatus('idle'), 4000);
+        } catch (err) {
+            console.error(err);
+            setSmsStatus('idle');
+            alert('Failed to send SMS');
+        }
     };
 
     // Features list for navigation
@@ -134,23 +140,23 @@ export default function RootPage() {
             <header className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-md border-b border-[#E2E8F0] z-50 px-6 lg:px-12 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center">
-                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-8 w-auto object-contain" />
+                        <img src="/kodipay-logo.png" alt="KodiPay Logo" className="h-10 w-auto object-contain" />
                     </div>
-                    <span className="font-bold text-[15px] tracking-tight text-[#0F172A]">KodiPay</span>
                     <span className="hidden sm:inline-block text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-[#007AFF] px-2 py-0.5 rounded border border-blue-100">Simple & Easy</span>
                 </div>
 
                 {/* Desktop Nav */}
-                <nav className="hidden xl:flex items-center gap-5 text-[11px] font-semibold text-[#64748B]">
+                <nav className="hidden xl:flex items-center gap-1 bg-[#F8FAFC] px-2 py-1.5 rounded-full border border-[#E2E8F0]">
                     {featureLinks.map(link => (
-                        <a key={link.id} href={`#${link.id}`} className="hover:text-[#0F172A] transition-colors">{link.label}</a>
+                        <a key={link.id} href={`#${link.id}`} className="text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-white px-3 py-1.5 rounded-full transition-all">{link.label}</a>
                     ))}
-                    <a href="#pricing" className="hover:text-[#0F172A] transition-colors">Pricing</a>
+                    <div className="w-[1px] h-3 bg-[#CBD5E1] mx-1"></div>
+                    <a href="#pricing" className="text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-white px-3 py-1.5 rounded-full transition-all">Pricing</a>
                 </nav>
 
                 <div className="hidden md:flex items-center gap-4">
                     {user ? (
-                        <Link 
+                        <Link
                             href="/dashboard"
                             className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
                         >
@@ -161,7 +167,7 @@ export default function RootPage() {
                             <Link href="/signin" className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors">
                                 Sign In
                             </Link>
-                            <Link 
+                            <Link
                                 href="/signup"
                                 className="bg-[#007AFF] text-white text-xs font-bold h-9 px-4 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm shadow-blue-100"
                             >
@@ -172,7 +178,7 @@ export default function RootPage() {
                 </div>
 
                 {/* Mobile Menu Toggle */}
-                <button 
+                <button
                     className="md:hidden p-2 text-[#0F172A] focus:outline-none"
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 >
@@ -187,17 +193,18 @@ export default function RootPage() {
                         <div className="space-y-4">
                             <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest">Features</p>
                             {featureLinks.map(link => (
-                                <a 
-                                    key={link.id} 
-                                    href={`#${link.id}`} 
-                                    className="block text-lg font-bold text-[#0F172A]"
+                                <a
+                                    key={link.id}
+                                    href={`#${link.id}`}
+                                    className="flex items-center justify-between text-base font-bold text-[#0F172A] py-3 border-b border-[#F1F5F9] last:border-0 hover:text-[#007AFF] transition-colors"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {link.label}
+                                    <ChevronRight size={16} className="text-[#94A3B8]" />
                                 </a>
                             ))}
-                            <a 
-                                href="#pricing" 
+                            <a
+                                href="#pricing"
                                 className="block text-lg font-bold text-[#0F172A]"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
@@ -207,7 +214,7 @@ export default function RootPage() {
                         <hr className="border-[#E2E8F0]" />
                         <div className="flex flex-col gap-4">
                             {user ? (
-                                <Link 
+                                <Link
                                     href="/dashboard"
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="bg-[#007AFF] text-white text-sm font-bold h-12 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
@@ -216,14 +223,14 @@ export default function RootPage() {
                                 </Link>
                             ) : (
                                 <>
-                                    <Link 
-                                        href="/signin" 
+                                    <Link
+                                        href="/signin"
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="border border-[#E2E8F0] text-[#0F172A] text-sm font-bold h-12 rounded-md flex items-center justify-center transition-colors"
                                     >
                                         Sign In
                                     </Link>
-                                    <Link 
+                                    <Link
                                         href="/signup"
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="bg-[#007AFF] text-white text-sm font-bold h-12 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
@@ -238,24 +245,20 @@ export default function RootPage() {
             )}
 
             {/* ── Hero Section ── */}
-            <section 
-                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-[#0F172A] overflow-hidden z-10"
+            <section
+                className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 px-6 lg:px-12 bg-gradient-to-br from-[#0F172A] via-[#0F172A] to-[#007AFF]/20 overflow-hidden z-10"
             >
-                
+
                 <div className="max-w-3xl mx-auto text-center space-y-6 flex flex-col items-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 text-blue-400 rounded-full">
-                        <Sparkles size={11} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Simple Bookkeeping · Easy Property Management</span>
-                    </div>
+
                     <h1 className="text-4xl lg:text-[46px] font-extrabold tracking-[-0.03em] leading-[1.1] text-white">
-                        <span 
-                            className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-blue-400 font-extrabold pr-1 ${
-                                animState === 'exiting' 
-                                    ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4' 
+                        <span
+                            className={`inline-block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-blue-400 font-extrabold pr-1 ${animState === 'exiting'
+                                    ? 'transition-all duration-400 ease-in opacity-0 -translate-y-4'
                                     : animState === 'entering'
                                         ? 'transition-none opacity-0 translate-y-4'
                                         : 'transition-all duration-500 ease-out opacity-100 translate-y-0'
-                            }`}
+                                }`}
                         >
                             {words[wordIndex]}
                         </span>{' '}
@@ -265,20 +268,20 @@ export default function RootPage() {
                         Manage tenants, send automatic payment reminders, and keep track of your income and expenses in one simple place.
                     </p>
                     <div className="flex flex-wrap justify-center gap-3 pt-2">
-                        <Link 
+                        <Link
                             href="/signup"
-                            className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2 shadow-md shadow-blue-100 transform hover:-translate-y-0.5 cursor-pointer"
+                            className="bg-[#007AFF] text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-blue-600 transition-all flex items-center gap-2  transform hover:-translate-y-0.5 cursor-pointer"
                         >
                             Get Started Free <ArrowRight size={14} />
                         </Link>
-                        <button 
+                        <button
                             onClick={() => setShowDemoModal(true)}
                             className="bg-white/10 border border-white/20 text-white text-xs font-bold h-11 px-6 rounded-md hover:bg-white/20 transition-all flex items-center gap-2 shadow-sm transform hover:-translate-y-0.5 cursor-pointer"
                         >
                             Ask for a Demo
                         </button>
                     </div>
-                    
+
                     <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-6 border-t border-white/10 w-full max-w-md mx-auto text-center">
                         <div className="flex -space-x-2">
                             {[1, 2, 3, 4].map(i => (
@@ -391,7 +394,7 @@ export default function RootPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Amount</label>
-                                            <input 
+                                            <input
                                                 type="number"
                                                 value={smsAmount}
                                                 onChange={(e) => setSmsAmount(e.target.value)}
@@ -400,7 +403,7 @@ export default function RootPage() {
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Sender Name</label>
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={smsName}
                                                 onChange={(e) => setSmsName(e.target.value)}
@@ -410,7 +413,7 @@ export default function RootPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider">Your Phone Number</label>
-                                        <input 
+                                        <input
                                             type="tel"
                                             value={smsPhone}
                                             onChange={(e) => setSmsPhone(e.target.value)}
@@ -419,7 +422,7 @@ export default function RootPage() {
                                             className="w-full h-10 px-3 bg-white border border-transparent rounded-md outline-none text-xs text-[#0F172A] focus:ring-2 focus:ring-blue-400"
                                         />
                                     </div>
-                                    <button 
+                                    <button
                                         type="submit"
                                         disabled={smsStatus === 'sending'}
                                         className="w-full h-11 bg-[#007AFF] hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70"
@@ -697,11 +700,11 @@ export default function RootPage() {
             {showDemoModal && (
                 <div className="fixed inset-0 z-[999] bg-[#0F172A]/50 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white border border-[#E2E8F0] rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative p-6 animate-zoom-in text-left">
-                        <button 
+                        <button
                             onClick={() => setShowDemoModal(false)}
                             className="absolute top-4 right-4 text-[#64748B] hover:text-[#0F172A] transition-colors font-bold text-xs"
                         >✕</button>
-                        
+
                         {demoSubmitted ? (
                             <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-fade-in">
                                 <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
@@ -720,7 +723,7 @@ export default function RootPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Your Name</label>
-                                    <input 
+                                    <input
                                         required
                                         type="text"
                                         placeholder="Enter full name"
@@ -731,7 +734,7 @@ export default function RootPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Email Address</label>
-                                    <input 
+                                    <input
                                         required
                                         type="email"
                                         placeholder="name@example.com"
@@ -742,7 +745,7 @@ export default function RootPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Phone Number</label>
-                                    <input 
+                                    <input
                                         required
                                         type="tel"
                                         placeholder="07XX XXX XXX"
@@ -753,7 +756,7 @@ export default function RootPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider">Number of Rental Units</label>
-                                    <select 
+                                    <select
                                         value={demoForm.portfolioSize}
                                         onChange={e => setDemoForm({ ...demoForm, portfolioSize: e.target.value })}
                                         className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-md outline-none text-xs text-[#0F172A] focus:border-[#007AFF] focus:bg-white"
@@ -764,7 +767,7 @@ export default function RootPage() {
                                         <option value="200+">More than 200 units</option>
                                     </select>
                                 </div>
-                                <button 
+                                <button
                                     type="submit"
                                     className="w-full h-11 bg-[#007AFF] hover:bg-blue-600 text-white text-xs font-bold rounded-md transition-colors shadow-sm"
                                 >

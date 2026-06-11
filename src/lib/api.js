@@ -227,3 +227,6 @@ export const submitDemoRequest = (data) =>
 export const getDemoRequests = () => fetchAPI('/superadmin/demo-requests');
 export const updateDemoRequestStatus = (id, status) =>
     fetchAPI(`/superadmin/demo-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+
+export const sendTestSms = (phone, message) =>
+    fetchAPI('/superadmin/test-sms', { method: 'POST', body: JSON.stringify({ phone, message }) });
